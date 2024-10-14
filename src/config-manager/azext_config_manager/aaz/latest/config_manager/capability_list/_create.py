@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager capability-list create",
+    "config-manager capabilities create",
 )
 class Create(AAZCommand):
     """Create a Capability List Resource
@@ -42,7 +42,7 @@ class Create(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.capability_list_name = AAZStrArg(
-            options=["-n", "--name", "--capability-list-name"],
+            options=["-n", "--name"],
             help="The name of the CapabilityList",
             required=True,
             fmt=AAZStrArgFormat(
@@ -56,26 +56,28 @@ class Create(AAZCommand):
         # define Arg Group "Properties"
 
         _args_schema = cls._args_schema
-        _args_schema.capabilities = AAZListArg(
+        _args_schema.capabilities = AAZStrArg(
             options=["--capabilities"],
             arg_group="Properties",
-            help="List of capabilities",
-        )
-
-        capabilities = cls._args_schema.capabilities
-        capabilities.Element = AAZObjectArg()
-
-        _element = cls._args_schema.capabilities.Element
-        _element.description = AAZStrArg(
-            options=["description"],
-            help="Description of capability",
+            help="List of capabilities in comma separated format",
             required=True,
         )
-        _element.name = AAZStrArg(
-            options=["name"],
-            help="Name of capability",
-            required=True,
-        )
+
+        # capabilities = cls._args_schema.capabilities
+        # print(capabilities)
+        # capabilities.Element = AAZObjectArg()
+        #
+        # _element = cls._args_schema.capabilities.Element
+        # _element.description = AAZStrArg(
+        #     options=["description"],
+        #     help="Description of capability",
+        #     required=True,
+        # )
+        # _element.name = AAZStrArg(
+        #     options=["name"],
+        #     help="Name of capability",
+        #     required=True,
+        # )
 
         # define Arg Group "Resource"
 
@@ -192,24 +194,35 @@ class Create(AAZCommand):
             _builder.set_prop("properties", AAZObjectType)
             _builder.set_prop("tags", AAZDictType, ".tags")
 
+            caps = []
+            for capability in str(self.ctx.args.capabilities).split(","):
+                caps.append({
+                    "name": capability,
+                    "description": capability
+                })
+
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("capabilities", AAZListType, ".capabilities", typ_kwargs={"flags": {"required": True}})
+                properties.set_const("capabilities", caps, AAZListType, typ_kwargs={"flags": {"required": True}})
 
-            capabilities = _builder.get(".properties.capabilities")
-            if capabilities is not None:
-                capabilities.set_elements(AAZObjectType, ".")
-
-            _elements = _builder.get(".properties.capabilities[]")
-            if _elements is not None:
-                _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
-                _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
+            # capabilities = _builder.get(".properties.capabilities")
+            # if capabilities is not None:
+            #     capabilities.set_elements(AAZObjectType, ".")
+            #
+            # _elements = _builder.get(".properties.capabilities[]")
+            # if _elements is not None:
+            #     _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
+            #     _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
 
             tags = _builder.get(".tags")
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
 
-            return self.serialize_content(_content_value)
+
+            payload = self.serialize_content(_content_value)
+            payload["properties"]["capabilities"] = caps
+            # print(payload)
+            return payload
 
         def on_200_201(self, session):
             data = self.deserialize_http_content(session)

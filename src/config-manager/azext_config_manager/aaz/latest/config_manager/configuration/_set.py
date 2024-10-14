@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager configuration create",
+    "config-manager configuration set",
     is_preview=True,
 )
 class Create(AAZCommand):
@@ -52,7 +52,7 @@ class Create(AAZCommand):
         #     ),
         # )
         _args_schema.configuration_name = AAZStrArg(
-            options=["-n", "--name", "--configuration-name"],
+            options=["--config-type"],
             help="The name of the Configuration",
             required=True,
             fmt=AAZStrArgFormat(
@@ -395,7 +395,7 @@ class Create(AAZCommand):
             properties = _builder.get(".properties")
             if properties is not None:
                 # properties.set_prop("currentVersion", AAZStrType, "1.0.0", typ_kwargs={"flags": {"required": True}})
-                # properties.set_const("currentVersion", "1.0.0", AAZStrType, typ_kwargs={"flags": {"required": True}})
+                properties.set_const("currentVersion", "1.0.0", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 properties.set_const("dynamicConfigurationType", "Shared", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 properties.set_const("dynamicConfigurationModel", "Common", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 # properties.currentVersion = AAZStrType()

@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager hierarchy-list create",
+    "config-manager hierarchies create",
     is_preview=True,
 )
 class Create(AAZCommand):
@@ -43,8 +43,8 @@ class Create(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.hierarchy_list_name = AAZStrArg(
-            options=["-n", "--name", "--hierarchy-list-name"],
-            help="The name of the HierarchyList",
+            options=["-n", "--name"],
+            help="The name of the Hierarchy Levels",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
@@ -57,26 +57,27 @@ class Create(AAZCommand):
         # define Arg Group "Properties"
 
         _args_schema = cls._args_schema
-        _args_schema.hierarchy_levels = AAZListArg(
-            options=["--hierarchy-levels"],
+        _args_schema.hierarchy_levels = AAZStrArg(
+            options=["--levels"],
             arg_group="Properties",
-            help="List of hierarchy levels",
-        )
-
-        hierarchy_levels = cls._args_schema.hierarchy_levels
-        hierarchy_levels.Element = AAZObjectArg()
-
-        _element = cls._args_schema.hierarchy_levels.Element
-        _element.description = AAZStrArg(
-            options=["description"],
-            help="Description of hierarchy level",
+            help="List of hierarchy levels in comma separated format",
             required=True,
         )
-        _element.name = AAZStrArg(
-            options=["name"],
-            help="Name of hierarchy level",
-            required=True,
-        )
+
+        # hierarchy_levels = cls._args_schema.hierarchy_levels
+        # hierarchy_levels.Element = AAZObjectArg()
+        #
+        # _element = cls._args_schema.hierarchy_levels.Element
+        # _element.description = AAZStrArg(
+        #     options=["description"],
+        #     help="Description of hierarchy level",
+        #     required=True,
+        # )
+        # _element.name = AAZStrArg(
+        #     options=["name"],
+        #     help="Name of hierarchy level",
+        #     required=True,
+        # )
 
         # define Arg Group "Resource"
 
@@ -193,23 +194,31 @@ class Create(AAZCommand):
             _builder.set_prop("properties", AAZObjectType)
             _builder.set_prop("tags", AAZDictType, ".tags")
 
+            hierarchies = []
+            for level in str(self.ctx.args.hierarchy_levels).split(","):
+                hierarchies.append({
+                    "name": level,
+                    "description": level
+                })
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("hierarchyLevels", AAZListType, ".hierarchy_levels", typ_kwargs={"flags": {"required": True}})
-
-            hierarchy_levels = _builder.get(".properties.hierarchyLevels")
-            if hierarchy_levels is not None:
-                hierarchy_levels.set_elements(AAZObjectType, ".")
-
-            _elements = _builder.get(".properties.hierarchyLevels[]")
-            if _elements is not None:
-                _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
-                _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
+                properties.set_const("hierarchyLevels", hierarchies, AAZListType, typ_kwargs={"flags": {"required": True}})
+            #
+            # hierarchy_levels = _builder.get(".properties.hierarchyLevels")
+            # if hierarchy_levels is not None:
+            #     hierarchy_levels.set_elements(AAZObjectType, ".")
+            #
+            # _elements = _builder.get(".properties.hierarchyLevels[]")
+            # if _elements is not None:
+            #     _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
+            #     _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
 
             tags = _builder.get(".tags")
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
 
+            payload = self.serialize_content(_content_value)
+            payload["properties"]["hierarchyLevels"] = hierarchies
             return self.serialize_content(_content_value)
 
         def on_200_201(self, session):

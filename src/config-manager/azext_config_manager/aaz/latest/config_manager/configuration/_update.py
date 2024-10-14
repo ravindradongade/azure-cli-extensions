@@ -46,7 +46,7 @@ class Update(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.configuration_name = AAZStrArg(
-            options=["--configuration-name"],
+            options=["--hierarchy-arm-id"],
             help="The name of the Configuration",
             required=True,
             id_part="name",

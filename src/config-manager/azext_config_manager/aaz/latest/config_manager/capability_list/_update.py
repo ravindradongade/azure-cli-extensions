@@ -9,7 +9,7 @@ import os
 import platform
 import subprocess
 import tempfile
-from idlelib.iomenu import encoding
+
 
 # pylint: skip-file
 # flake8: noqa
@@ -18,27 +18,25 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager configuration update",
-    is_preview=True,
+    "config-manager capability-list update",
 )
 class Update(AAZCommand):
-    """Update a Dynamic Configuration Version Resource
+    """Update a Capability List Resource
     """
 
     _aaz_info = {
-        "version": "2024-06-01-preview",
+        "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/microsoft.edge/configurations/{}/dynamicconfigurations/{}/versions/{}", "2024-06-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/capabilitylists/{}", "2024-08-01-preview"],
         ]
     }
-
-    AZ_SUPPORT_NO_WAIT = True
 
     AZ_SUPPORT_GENERIC_UPDATE = True
 
     def _handler(self, command_args):
         super()._handler(command_args)
-        return self.build_lro_poller(self._execute_operations, self._output)
+        self._execute_operations()
+        return self._output()
 
     _args_schema = None
 
@@ -51,47 +49,73 @@ class Update(AAZCommand):
         # define Arg Group ""
 
         _args_schema = cls._args_schema
-        _args_schema.configuration_name = AAZStrArg(
-            options=["-n","--name"],
-            help="The name of the Configuration",
+        _args_schema.capability_list_name = AAZStrArg(
+            options=["-n", "--name", "--capability-list-name"],
+            help="The name of the CapabilityList",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-
-        _args_schema.version_name = AAZStrArg(
-            options=[ "--version-name"],
-            help="The version name of the Configuration",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
-
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
 
+        _args_schema.file = AAZStrArg(
+            options=["--file"],
+
+            help="List of capabilities",
+        )
+
         # define Arg Group "Properties"
 
-        # _args_schema = cls._args_schema
-        # _args_schema.values = AAZStrArg(
-        #     options=["--values"],
-        #     arg_group="Properties",
-        #     help="Values of configuration version",
-        # )
+        _args_schema = cls._args_schema
+        _args_schema.capabilities = AAZListArg(
+            options=["--capabilities"],
+            arg_group="Properties",
+            help="List of capabilities",
+        )
+
+        capabilities = cls._args_schema.capabilities
+        capabilities.Element = AAZObjectArg(
+            nullable=True,
+        )
+
+        _element = cls._args_schema.capabilities.Element
+        _element.description = AAZStrArg(
+            options=["description"],
+            help="Description of capability",
+        )
+        _element.name = AAZStrArg(
+            options=["name"],
+            help="Name of capability",
+        )
+
+        # define Arg Group "Resource"
+
+        _args_schema = cls._args_schema
+        _args_schema.tags = AAZDictArg(
+            options=["--tags"],
+            arg_group="Resource",
+            help="Resource tags.",
+            nullable=True,
+        )
+
+        tags = cls._args_schema.tags
+        tags.Element = AAZStrArg(
+            nullable=True,
+        )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        self.DynamicConfigurationVersionsGet(ctx=self.ctx)()
+        self.CapabilityListsGet(ctx=self.ctx)()
         self.pre_instance_update(self.ctx.vars.instance)
         self.InstanceUpdateByJson(ctx=self.ctx)()
         self.InstanceUpdateByGeneric(ctx=self.ctx)()
         self.post_instance_update(self.ctx.vars.instance)
-        yield self.DynamicConfigurationVersionsCreateOrUpdate(ctx=self.ctx)()
+        self.CapabilityListsCreateOrUpdate(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -114,7 +138,7 @@ class Update(AAZCommand):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
         return result
 
-    class DynamicConfigurationVersionsGet(AAZHttpOperation):
+    class CapabilityListsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -128,7 +152,7 @@ class Update(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions/{dynamicConfigurationVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/capabilityLists/{capabilityListName}",
                 **self.url_parameters
             )
 
@@ -144,15 +168,7 @@ class Update(AAZCommand):
         def url_parameters(self):
             parameters = {
                 **self.serialize_url_param(
-                    "configurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationVersionName", self.ctx.args.version_name,
+                    "capabilityListName", self.ctx.args.capability_list_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -170,7 +186,7 @@ class Update(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-06-01-preview",
+                    "api-version", "2024-08-01-preview",
                     required=True,
                 ),
             }
@@ -201,41 +217,25 @@ class Update(AAZCommand):
                 return cls._schema_on_200
 
             cls._schema_on_200 = AAZObjectType()
-            _UpdateHelper._build_schema_dynamic_configuration_version_read(cls._schema_on_200)
+            _UpdateHelper._build_schema_capability_list_read(cls._schema_on_200)
 
             return cls._schema_on_200
 
-    class DynamicConfigurationVersionsCreateOrUpdate(AAZHttpOperation):
+    class CapabilityListsCreateOrUpdate(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
             request = self.make_request()
             session = self.client.send_request(request=request, stream=False, **kwargs)
-            if session.http_response.status_code in [202]:
-                return self.client.build_lro_polling(
-                    self.ctx.args.no_wait,
-                    session,
-                    self.on_200_201,
-                    self.on_error,
-                    lro_options={"final-state-via": "azure-async-operation"},
-                    path_format_arguments=self.url_parameters,
-                )
             if session.http_response.status_code in [200, 201]:
-                return self.client.build_lro_polling(
-                    self.ctx.args.no_wait,
-                    session,
-                    self.on_200_201,
-                    self.on_error,
-                    lro_options={"final-state-via": "azure-async-operation"},
-                    path_format_arguments=self.url_parameters,
-                )
+                return self.on_200_201(session)
 
             return self.on_error(session.http_response)
 
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions/{dynamicConfigurationVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/capabilityLists1/{capabilityListName}",
                 **self.url_parameters
             )
 
@@ -251,15 +251,7 @@ class Update(AAZCommand):
         def url_parameters(self):
             parameters = {
                 **self.serialize_url_param(
-                    "configurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationVersionName", self.ctx.args.version_name,
+                    "capabilityListName", self.ctx.args.capability_list_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -277,7 +269,7 @@ class Update(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-06-01-preview",
+                    "api-version", "2024-08-01-preview",
                     required=True,
                 ),
             }
@@ -297,6 +289,8 @@ class Update(AAZCommand):
 
         @property
         def content(self):
+
+            print(str(self.ctx.args.file))
             _content_value, _builder = self.new_content_builder(
                 self.ctx.args,
                 value=self.ctx.vars.instance,
@@ -320,7 +314,7 @@ class Update(AAZCommand):
                 return cls._schema_on_200_201
 
             cls._schema_on_200_201 = AAZObjectType()
-            _UpdateHelper._build_schema_dynamic_configuration_version_read(cls._schema_on_200_201)
+            _UpdateHelper._build_schema_capability_list_read(cls._schema_on_200_201)
 
             return cls._schema_on_200_201
 
@@ -330,12 +324,13 @@ class Update(AAZCommand):
             self._update_instance(self.ctx.vars.instance)
 
         def _update_instance(self, instance):
-
+            payload = AAZHttpOperation.serialize_content(instance)
+            payloadJson = json.dumps(payload, indent=2)
             editor = "vi"
             if platform.system() == "Windows":
                 editor = "notepad"
             temp_file = tempfile.NamedTemporaryFile(delete=False)
-            temp_file.write(bytes(str(instance["properties"]["values"]), "utf-8"))
+            temp_file.write(bytes(payloadJson, "utf-8"))
             temp_file.close()
             editor_output = subprocess.run([editor, temp_file.name], capture_output=True, check=False)
             if editor_output.returncode != 0:
@@ -344,18 +339,32 @@ class Update(AAZCommand):
             with open(temp_file.name, "rb") as f:
                 updatedPaload = f.read().decode("utf-8")
             os.unlink(temp_file.name)
-
+            payload_dict = json.loads(updatedPaload)
             _instance_value, _builder = self.new_content_builder(
                 self.ctx.args,
                 value=instance,
                 typ=AAZObjectType
             )
             _builder.set_prop("properties", AAZObjectType)
+            _builder.set_prop("tags", AAZDictType, ".tags")
 
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_const("values", updatedPaload, AAZStrType, typ_kwargs={"flags": {"required": True}})
+                properties.set_const("capabilities", payload_dict["properties"]["capabilities"], AAZListType, typ_kwargs={"flags": {"required": True}})
 
+            capabilities = _builder.get(".properties.capabilities")
+            if capabilities is not None:
+                capabilities.set_elements(AAZObjectType, ".")
+
+            _elements = _builder.get(".properties.capabilities[]")
+            if _elements is not None:
+                _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
+                _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
+
+            tags = _builder.get(".tags")
+            if tags is not None:
+                tags.set_elements(AAZStrType, ".")
+            print(AAZHttpOperation.serialize_content(_instance_value))
             return _instance_value
 
     class InstanceUpdateByGeneric(AAZGenericInstanceUpdateOperation):
@@ -370,46 +379,63 @@ class Update(AAZCommand):
 class _UpdateHelper:
     """Helper class for Update"""
 
-    _schema_dynamic_configuration_version_read = None
+    _schema_capability_list_read = None
 
     @classmethod
-    def _build_schema_dynamic_configuration_version_read(cls, _schema):
-        if cls._schema_dynamic_configuration_version_read is not None:
-            _schema.id = cls._schema_dynamic_configuration_version_read.id
-            _schema.name = cls._schema_dynamic_configuration_version_read.name
-            _schema.properties = cls._schema_dynamic_configuration_version_read.properties
-            _schema.system_data = cls._schema_dynamic_configuration_version_read.system_data
-            _schema.type = cls._schema_dynamic_configuration_version_read.type
+    def _build_schema_capability_list_read(cls, _schema):
+        if cls._schema_capability_list_read is not None:
+            _schema.id = cls._schema_capability_list_read.id
+            _schema.location = cls._schema_capability_list_read.location
+            _schema.name = cls._schema_capability_list_read.name
+            _schema.properties = cls._schema_capability_list_read.properties
+            _schema.system_data = cls._schema_capability_list_read.system_data
+            _schema.tags = cls._schema_capability_list_read.tags
+            _schema.type = cls._schema_capability_list_read.type
             return
 
-        cls._schema_dynamic_configuration_version_read = _schema_dynamic_configuration_version_read = AAZObjectType()
+        cls._schema_capability_list_read = _schema_capability_list_read = AAZObjectType()
 
-        dynamic_configuration_version_read = _schema_dynamic_configuration_version_read
-        dynamic_configuration_version_read.id = AAZStrType(
+        capability_list_read = _schema_capability_list_read
+        capability_list_read.id = AAZStrType(
             flags={"read_only": True},
         )
-        dynamic_configuration_version_read.name = AAZStrType(
+        capability_list_read.location = AAZStrType(
+            flags={"required": True},
+        )
+        capability_list_read.name = AAZStrType(
             flags={"read_only": True},
         )
-        dynamic_configuration_version_read.properties = AAZObjectType()
-        dynamic_configuration_version_read.system_data = AAZObjectType(
+        capability_list_read.properties = AAZObjectType()
+        capability_list_read.system_data = AAZObjectType(
             serialized_name="systemData",
             flags={"read_only": True},
         )
-        dynamic_configuration_version_read.type = AAZStrType(
+        capability_list_read.tags = AAZDictType()
+        capability_list_read.type = AAZStrType(
             flags={"read_only": True},
         )
 
-        properties = _schema_dynamic_configuration_version_read.properties
+        properties = _schema_capability_list_read.properties
+        properties.capabilities = AAZListType(
+            flags={"required": True},
+        )
         properties.provisioning_state = AAZStrType(
             serialized_name="provisioningState",
             flags={"read_only": True},
         )
-        properties.values = AAZStrType(
+
+        capabilities = _schema_capability_list_read.properties.capabilities
+        capabilities.Element = AAZObjectType()
+
+        _element = _schema_capability_list_read.properties.capabilities.Element
+        _element.description = AAZStrType(
+            flags={"required": True},
+        )
+        _element.name = AAZStrType(
             flags={"required": True},
         )
 
-        system_data = _schema_dynamic_configuration_version_read.system_data
+        system_data = _schema_capability_list_read.system_data
         system_data.created_at = AAZStrType(
             serialized_name="createdAt",
         )
@@ -429,11 +455,16 @@ class _UpdateHelper:
             serialized_name="lastModifiedByType",
         )
 
-        _schema.id = cls._schema_dynamic_configuration_version_read.id
-        _schema.name = cls._schema_dynamic_configuration_version_read.name
-        _schema.properties = cls._schema_dynamic_configuration_version_read.properties
-        _schema.system_data = cls._schema_dynamic_configuration_version_read.system_data
-        _schema.type = cls._schema_dynamic_configuration_version_read.type
+        tags = _schema_capability_list_read.tags
+        tags.Element = AAZStrType()
+
+        _schema.id = cls._schema_capability_list_read.id
+        _schema.location = cls._schema_capability_list_read.location
+        _schema.name = cls._schema_capability_list_read.name
+        _schema.properties = cls._schema_capability_list_read.properties
+        _schema.system_data = cls._schema_capability_list_read.system_data
+        _schema.tags = cls._schema_capability_list_read.tags
+        _schema.type = cls._schema_capability_list_read.type
 
 
 __all__ = ["Update"]

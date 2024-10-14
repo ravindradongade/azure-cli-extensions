@@ -58,36 +58,45 @@ class Create(AAZCommand):
         # define Arg Group "Properties"
 
         _args_schema = cls._args_schema
-        _args_schema.capabilities = AAZListArg(
+        _args_schema.capabilities = AAZStrArg(
             options=["--capabilities"],
             arg_group="Properties",
-            help="List of capabilities",
+            help="List of capabilities in comma separated format",
+            required=True,
+        )
+        _args_schema.hierarchy_level  = AAZStrArg(
+            options=["--hierarchy-level"],
+            arg_group="Properties",
+            help="Hierarchy level",
+            required=True,
         )
         _args_schema.custom_location = AAZStrArg(
             options=["--custom-location"],
             arg_group="Properties",
             help="Custom location of deployment target",
+            required=True,
         )
         _args_schema.display_name = AAZStrArg(
             options=["--display-name"],
             arg_group="Properties",
             help="Display Name of deployment target",
-        )
-
-        capabilities = cls._args_schema.capabilities
-        capabilities.Element = AAZObjectArg()
-
-        _element = cls._args_schema.capabilities.Element
-        _element.description = AAZStrArg(
-            options=["description"],
-            help="Description of capability",
             required=True,
         )
-        _element.name = AAZStrArg(
-            options=["name"],
-            help="Name of capability",
-            required=True,
-        )
+
+        # capabilities = cls._args_schema.capabilities
+        # capabilities.Element = AAZObjectArg()
+
+        # _element = cls._args_schema.capabilities.Element
+        # _element.description = AAZStrArg(
+        #     options=["description"],
+        #     help="Description of capability",
+        #     required=True,
+        # )
+        # _element.name = AAZStrArg(
+        #     options=["name"],
+        #     help="Name of capability",
+        #     required=True,
+        # )
 
         # define Arg Group "Resource"
 
@@ -219,11 +228,18 @@ class Create(AAZCommand):
             _builder.set_prop("location", AAZStrType, ".location", typ_kwargs={"flags": {"required": True}})
             _builder.set_prop("properties", AAZObjectType)
             _builder.set_prop("tags", AAZDictType, ".tags")
-
+            caps = []
+            for capability in str(self.ctx.args.capabilities).split(","):
+                caps.append({
+                    "name": capability,
+                    "description": capability
+                })
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("capabilities", AAZListType, ".capabilities", typ_kwargs={"flags": {"required": True}})
-                properties.set_prop("customLocation", AAZStrType, ".custom_location", typ_kwargs={"flags": {"required": True}})
+                properties.set_const("capabilities", caps, AAZListType, typ_kwargs={"flags": {"required": True}})
+                properties.set_prop("customLocation", AAZStrType, ".custom_location",
+                                    typ_kwargs={"flags": {"required": True}})
+                properties.set_prop("hierarchyLevel", AAZStrType, ".hierarchy_level ", typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("displayName", AAZStrType, ".display_name", typ_kwargs={"flags": {"required": True}})
 
             capabilities = _builder.get(".properties.capabilities")
@@ -239,7 +255,9 @@ class Create(AAZCommand):
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
 
-            return self.serialize_content(_content_value)
+            cnt = self.serialize_content(_content_value)
+            print(cnt)
+            return  cnt
 
         def on_200_201(self, session):
             data = self.deserialize_http_content(session)
@@ -280,6 +298,10 @@ class Create(AAZCommand):
 
             properties = cls._schema_on_200_201.properties
             properties.capabilities = AAZListType(
+                flags={"required": True},
+            )
+            properties.hierarchy_level = AAZListType(
+                serialized_name="hierarchyLevel",
                 flags={"required": True},
             )
             properties.custom_location = AAZStrType(

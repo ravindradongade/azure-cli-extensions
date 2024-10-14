@@ -67,16 +67,16 @@ class Create(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.version = AAZStrArg(
-            options=["-v","--version"],
+            options=["--version_name"],
             arg_group="Properties",
             help="Version of configuration",
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
+            # fmt=AAZStrArgFormat(
+            #     pattern="^[a-zA-Z0-9-]{3,24}$",
+            # ),
         )
         _args_schema = cls._args_schema
-        _args_schema.config_file = AAZStrArg(
-            options=["--config-template-file"],
+        _args_schema.config_template = AAZStrArg(
+            options=["--config-file"],
             arg_group="Properties",
             help="Full path of config file",
         )
@@ -102,11 +102,11 @@ class Create(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        config_file = self.ctx.args.config_file
-        with open(str(config_file), "r", encoding="utf8") as file:
-            content = file.read()
-            # print(content)
-            self.ctx.args.config_file = content
+        # config_file = self.ctx.args.config_file
+        # with open(str(config_file), "r", encoding="utf8") as file:
+        #     content = file.read()
+        #     # print(content)
+        #     self.ctx.args.config_file = content
         yield self.ConfigurationsCreateOrUpdate(ctx=self.ctx)()
         yield self.DynamicConfigurationsCreateOrUpdate(ctx=self.ctx)()
         yield self.DynamicConfigurationVersionsCreateOrUpdate(ctx=self.ctx)()
@@ -395,7 +395,7 @@ class Create(AAZCommand):
             properties = _builder.get(".properties")
             if properties is not None:
                 # properties.set_prop("currentVersion", AAZStrType, "1.0.0", typ_kwargs={"flags": {"required": True}})
-                # properties.set_const("currentVersion", "1.0.0", AAZStrType, typ_kwargs={"flags": {"required": True}})
+                properties.set_const("currentVersion", "1.0.0", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 properties.set_const("dynamicConfigurationType", "Shared", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 properties.set_const("dynamicConfigurationModel", "Common", AAZStrType, typ_kwargs={"flags": {"required": True}})
                 # properties.currentVersion = AAZStrType()
@@ -583,7 +583,7 @@ class Create(AAZCommand):
 
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("values", AAZStrType, ".config_file", typ_kwargs={"flags": {"required": True}})
+                properties.set_prop("values", AAZStrType, ".config_template", typ_kwargs={"flags": {"required": True}})
 
             return self.serialize_content(_content_value)
 

@@ -63,10 +63,11 @@ class Create(AAZCommand):
         _args_schema.version = AAZStrArg(
             options=["-v", "--version","--schema-version"],
             arg_group="Properties",
-            help="Current Version of schema",
+            help="Version of schema",
             fmt=AAZStrArgFormat(
                 pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
             ),
+            required=True,
         )
 
         _args_schema = cls._args_schema
@@ -74,6 +75,7 @@ class Create(AAZCommand):
             options=["--schema-file"],
             arg_group="Properties",
             help="Schema file",
+            required=True,
         )
 
         # define Arg Group "Resource"
@@ -99,12 +101,12 @@ class Create(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        schema_file = self.ctx.args.schema_file
-        with open(str(schema_file), "r", encoding="utf8") as file:
-            content = file.read()
-            # print(content)
-            self.ctx.args.schema_file = content
-        # print(self.ctx.args.schema_file.to_serialized_data())
+        # schema_file = self.ctx.args.schema_file
+        # with open(str(schema_file), "r", encoding="utf8") as file:
+        #     content = file.read()
+        #     # print(content)
+        #     self.ctx.args.schema_file = content
+        # # print(self.ctx.args.schema_file.to_serialized_data())
         yield self.SchemasCreateOrUpdate(ctx=self.ctx)()
         yield self.SchemasVersionCreateOrUpdate(ctx=self.ctx)()
         self.post_operations()

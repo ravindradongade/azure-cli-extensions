@@ -16,13 +16,13 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Schema Resource
+    """Get a Schema Version Resource
     """
 
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}/versions/{}", "2024-08-01-preview"],
         ]
     }
 
@@ -46,7 +46,7 @@ class Show(AAZCommand):
             required=True,
         )
         _args_schema.schema_name = AAZStrArg(
-            options=["-n", "--name", "--schema-name"],
+            options=["-n","--name","--schema-name"],
             help="The name of the Schema",
             required=True,
             id_part="name",
@@ -54,11 +54,27 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
+        _args_schema.schema_version_name = AAZStrArg(
+            options=["-v", "--version", "--schema-version"],
+            help="The version of the Schema",
+            required=True,
+            # id_part="child_name_1",
+            fmt=AAZStrArgFormat(
+                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
+            ),
+        )
+        _args_schema = cls._args_schema
+        _args_schema.schema_only = AAZObjectArg(
+            options=["--schema-only"],
+            help="Show only schema without metadata",
+            arg_group="Resource",
+            blank={},
+        )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        self.SchemasGet(ctx=self.ctx)()
+        self.SchemaVersionsGet(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -71,9 +87,12 @@ class Show(AAZCommand):
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        return result
+        if AAZHttpOperation.serialize_content(self.ctx.args.schema_only) is not None:
+            print(result["properties"]["value"])
+        else:
+            return result
 
-    class SchemasGet(AAZHttpOperation):
+    class SchemaVersionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -87,7 +106,7 @@ class Show(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/schemas/{schemaName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/schemas/{schemaName}/versions/{schemaVersionName}",
                 **self.url_parameters
             )
 
@@ -108,6 +127,10 @@ class Show(AAZCommand):
                 ),
                 **self.serialize_url_param(
                     "schemaName", self.ctx.args.schema_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "schemaVersionName", self.ctx.args.schema_version_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -157,9 +180,6 @@ class Show(AAZCommand):
             _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200.location = AAZStrType(
-                flags={"required": True},
-            )
             _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
@@ -168,19 +188,17 @@ class Show(AAZCommand):
                 serialized_name="systemData",
                 flags={"read_only": True},
             )
-            _schema_on_200.tags = AAZDictType()
             _schema_on_200.type = AAZStrType(
                 flags={"read_only": True},
             )
 
             properties = cls._schema_on_200.properties
-            properties.current_version = AAZStrType(
-                serialized_name="currentVersion",
-                flags={"required": True},
-            )
             properties.provisioning_state = AAZStrType(
                 serialized_name="provisioningState",
                 flags={"read_only": True},
+            )
+            properties.value = AAZStrType(
+                flags={"required": True},
             )
 
             system_data = cls._schema_on_200.system_data
@@ -202,9 +220,6 @@ class Show(AAZCommand):
             system_data.last_modified_by_type = AAZStrType(
                 serialized_name="lastModifiedByType",
             )
-
-            tags = cls._schema_on_200.tags
-            tags.Element = AAZStrType()
 
             return cls._schema_on_200
 

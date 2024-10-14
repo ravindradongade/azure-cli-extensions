@@ -56,7 +56,7 @@ class Create(AAZCommand):
         )
         _args_schema.solution_version_name = AAZStrArg(
             options=["-v", "--version", "--solution-version"],
-            help="The name of the SolutionVersion",
+            help="The version of the solution",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
@@ -64,56 +64,63 @@ class Create(AAZCommand):
         )
 
         _args_schema = cls._args_schema
-        _args_schema.capabilities = AAZListArg(
+        _args_schema.capabilities = AAZStrArg(
             options=["--capabilities"],
             arg_group="Properties",
-            help="List of capabilities",
+            required=True,
+            help="List of capabilities in comma separated format",
         )
         _args_schema.description = AAZStrArg(
             options=["--description"],
             arg_group="Properties",
+            required=True,
             help="Description of solution",
         )
         _args_schema = cls._args_schema
         _args_schema.helm_uri = AAZStrArg(
-            options=["--helm-chart-uri"],
+            options=["--chart"],
             arg_group="Properties",
+            required=True,
             help="Helm chart URI",
         )
 
         _args_schema = cls._args_schema
         _args_schema.helm_chart_version = AAZStrArg(
-            options=["--helm-chart-version"],
+            options=["--chart-version"],
             arg_group="Properties",
+            required=True,
             help="Helm chart version",
         )
 
         _args_schema = cls._args_schema
         _args_schema.config_template = AAZStrArg(
-            options=["--config-template-file"],
+            options=["--config-template"],
             arg_group="Properties",
+            required=True,
             help="Config Template File Path(Full path)",
         )
 
-        capabilities = cls._args_schema.capabilities
-        capabilities.Element = AAZObjectArg()
-
-        _element = cls._args_schema.capabilities.Element
-        _element.description = AAZStrArg(
-            options=["description"],
-            help="Description of capability",
-            required=True,
-        )
-        _element.name = AAZStrArg(
-            options=["name"],
-            help="Name of capability",
-            required=True,
-        )
+        # capabilities = cls._args_schema.capabilities
+        # capabilities.Element = AAZObjectArg()
+        #
+        # _element = cls._args_schema.capabilities.Element
+        # _element.description = AAZStrArg(
+        #     options=["description"],
+        #     help="Description of capability",
+        #     required=True,
+        # )
+        # _element.name = AAZStrArg(
+        #     options=["name"],
+        #     help="Name of capability",
+        #     required=True,
+        # )
 
         _args_schema = cls._args_schema
         _args_schema.helm = AAZObjectArg(
             options=["--helm"],
             arg_group="Resource",
+            help="Helm chart deployment",
+            required=True,
             blank={},
         )
         _args_schema = cls._args_schema
@@ -135,11 +142,11 @@ class Create(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        config_template = self.ctx.args.config_template
-        with open(str(config_template), "r", encoding="utf8") as file:
-            content = file.read()
-            # print(content)
-            self.ctx.args.config_template = content
+        # config_template = self.ctx.args.config_template
+        # with open(str(config_template), "r", encoding="utf8") as file:
+        #     content = file.read()
+        #     # print(content)
+        #     self.ctx.args.config_template = content
         yield self.SolutionsCreateOrUpdate(ctx=self.ctx)()
         yield self.SolutionVersionsCreateOrUpdate(ctx=self.ctx)()
         self.post_operations()
@@ -250,25 +257,36 @@ class Create(AAZCommand):
             _builder.set_prop("tags", AAZDictType, ".tags")
 
             properties = _builder.get(".properties")
+            caps = []
+            for capability in str(self.ctx.args.capabilities).split(","):
+                caps.append({
+                    "name": capability,
+                    "description": capability
+                })
+                print(caps)
             if properties is not None:
-                properties.set_prop("capabilities", AAZListType, ".capabilities",
-                                    typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
 
-            capabilities = _builder.get(".properties.capabilities")
-            if capabilities is not None:
-                capabilities.set_elements(AAZObjectType, ".")
+                # properties.set_const("capabilities", caps, AAZListType,
+                #                     typ_kwargs={"flags": {"required": True}})
 
-            _elements = _builder.get(".properties.capabilities[]")
-            if _elements is not None:
-                _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
-                _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
+
+            # capabilities = _builder.get(".properties.capabilities")
+            # if capabilities is not None:
+            #     capabilities.set_elements(AAZObjectType, ".")
+            #
+            # _elements = _builder.get(".properties.capabilities[]")
+            # if _elements is not None:
+            #     _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
+            #     _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
 
             tags = _builder.get(".tags")
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
 
-            return self.serialize_content(_content_value)
+            content = self.serialize_content(_content_value)
+            content["properties"]["capabilities"] = caps
+            return content
 
         def on_200_201(self, session):
             data = self.deserialize_http_content(session)
@@ -469,7 +487,7 @@ class Create(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
-            _builder.set_const("kind", "Helm", AAZStrType, ".helm", typ_kwargs={"flags": {"required": True}})
+            _builder.set_const("kind", "Helm", AAZStrType, typ_kwargs={"flags": {"required": True}})
             _builder.set_prop("properties", AAZObjectType)
             # _builder.set_prop("tags", AAZDictType, ".tags")
 
@@ -479,7 +497,7 @@ class Create(AAZCommand):
                 properties.set_prop("helmChartVersion", AAZStrType, ".helm_chart_version", typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("configurationTemplate", AAZStrType, ".config_template",
                                     typ_kwargs={"flags": {"required": True}})
-            _builder.discriminate_by("kind", "Helm")
+            # _builder.discriminate_by("kind", "Helm")
 
 
 
@@ -490,7 +508,7 @@ class Create(AAZCommand):
             versionInResp = data["name"]
             data["name"] = str(self.ctx.args.solution_name)
             data["version"] = versionInResp
-            print(data)
+
             self.ctx.set_var(
                 "instance",
                 data,

@@ -7,10 +7,15 @@
 
 # pylint: skip-file
 # flake8: noqa
-
+from ._resolve_configuration import *
+from ._publish import *
+from ._deployment_status_show import *
+from ._deploy import *
 from .__cmd_group import *
 from ._create import *
-from ._delete import *
+
 from ._list import *
 from ._show import *
+
+from ._config_update import *
 from ._wait import *

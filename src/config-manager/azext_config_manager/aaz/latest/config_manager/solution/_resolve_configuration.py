@@ -12,17 +12,17 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution-binding publish",
+    "config-manager solution config resolve",
     is_preview=True,
 )
-class Publish(AAZCommand):
-    """Post request to publish
+class ResolveConfiguration(AAZCommand):
+    """Post request to resolve configuration
     """
 
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/publish", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/resolveconfiguration", "2024-08-01-preview"],
         ]
     }
 
@@ -46,9 +46,9 @@ class Publish(AAZCommand):
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
-        _args_schema.solution_binding_name = AAZStrArg(
-            options=["-n","--name","--solution-binding-name"],
-            help="The name of the SolutionBinding",
+        _args_schema.solution_name = AAZStrArg(
+            options=["-n","--name", "--solution-name"],
+            help="The name of the Solution",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
@@ -56,24 +56,30 @@ class Publish(AAZCommand):
             ),
         )
 
-        # define Arg Group "Properties"
+        _args_schema.deployment_target = AAZStrArg(
+            options=["--deployment-target-name"],
+            help="The name of the Deployment Target",
+            required=True,
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+
+        # define Arg Group "Body"
 
         _args_schema = cls._args_schema
-        _args_schema.solution_binding_configuration_id = AAZStrArg(
-            options=["--solution-binding-configuration-id"],
-            arg_group="Properties",
-            help="Configuration version of solution instance",
-        )
-        _args_schema.solution_version_id = AAZStrArg(
-            options=["--solution-version-id"],
-            arg_group="Properties",
-            help="Solution version of solution instance",
+        _args_schema.solution_version = AAZStrArg(
+            options=["-v","--version","--solution-version"],
+            arg_group="Body",
+            help="Solution Version",
+            required=True,
         )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        yield self.SolutionBindingsPublish(ctx=self.ctx)()
+        yield self.SolutionBindingsResolveConfiguration(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -86,9 +92,10 @@ class Publish(AAZCommand):
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        return result
+        print(result["properties"]["value"])
+        pass
 
-    class SolutionBindingsPublish(AAZHttpOperation):
+    class SolutionBindingsResolveConfiguration(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -118,7 +125,7 @@ class Publish(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/publish",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/resolveConfiguration",
                 **self.url_parameters
             )
 
@@ -138,7 +145,7 @@ class Publish(AAZCommand):
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionBindingName", self.ctx.args.solution_binding_name,
+                    "solutionBindingName", str(self.ctx.args.deployment_target)+"-"+str(self.ctx.args.solution_name),
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -177,12 +184,7 @@ class Publish(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
-            _builder.set_prop("properties", AAZObjectType)
-
-            properties = _builder.get(".properties")
-            if properties is not None:
-                properties.set_prop("solutionBindingConfigurationId", AAZStrType, ".solution_binding_configuration_id", typ_kwargs={"flags": {"required": True}})
-                properties.set_prop("solutionVersionId", AAZStrType, ".solution_version_id", typ_kwargs={"flags": {"required": True}})
+            _builder.set_prop("solutionVersion", AAZStrType, ".solution_version", typ_kwargs={"flags": {"required": True}})
 
             return self.serialize_content(_content_value)
 
@@ -224,16 +226,11 @@ class Publish(AAZCommand):
                 serialized_name="provisioningState",
                 flags={"read_only": True},
             )
-            properties.solution_binding_configuration_id = AAZStrType(
-                serialized_name="solutionBindingConfigurationId",
+            properties.revision = AAZStrType(
                 flags={"required": True},
             )
-            properties.solution_version_id = AAZStrType(
-                serialized_name="solutionVersionId",
+            properties.value = AAZStrType(
                 flags={"required": True},
-            )
-            properties.state = AAZStrType(
-                flags={"read_only": True},
             )
 
             system_data = cls._schema_on_200.system_data
@@ -259,8 +256,8 @@ class Publish(AAZCommand):
             return cls._schema_on_200
 
 
-class _PublishHelper:
-    """Helper class for Publish"""
+class _ResolveConfigurationHelper:
+    """Helper class for ResolveConfiguration"""
 
 
-__all__ = ["Publish"]
+__all__ = ["ResolveConfiguration"]

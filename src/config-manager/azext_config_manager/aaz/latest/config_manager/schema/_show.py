@@ -67,7 +67,7 @@ class Show(AAZCommand):
         _args_schema.schema_only = AAZObjectArg(
             options=["--schema-only"],
             help="Show only schema without metadata",
-            arg_group="Resource",
+            # arg_group="Resource",
             blank={},
         )
         return cls._args_schema

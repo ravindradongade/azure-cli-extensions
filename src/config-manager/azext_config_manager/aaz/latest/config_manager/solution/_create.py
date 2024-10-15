@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution create",
+    "config-manager solution helm create",
     is_preview=True,
 )
 class Create(AAZCommand):
@@ -115,14 +115,14 @@ class Create(AAZCommand):
         #     required=True,
         # )
 
-        _args_schema = cls._args_schema
-        _args_schema.helm = AAZObjectArg(
-            options=["--helm"],
-            arg_group="Resource",
-            help="Helm chart deployment",
-            required=True,
-            blank={},
-        )
+        # _args_schema = cls._args_schema
+        # _args_schema.helm = AAZObjectArg(
+        #     options=["--helm"],
+        #     arg_group="Resource",
+        #     help="Helm chart deployment",
+        #     required=True,
+        #     blank={},
+        # )
         _args_schema = cls._args_schema
         _args_schema.location = AAZResourceLocationArg(
             arg_group="Resource",
@@ -263,7 +263,7 @@ class Create(AAZCommand):
                     "name": capability,
                     "description": capability
                 })
-                print(caps)
+
             if properties is not None:
                 properties.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
 

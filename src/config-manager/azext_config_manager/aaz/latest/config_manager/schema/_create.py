@@ -7,7 +7,7 @@
 
 # pylint: skip-file
 # flake8: noqa
-
+# import json
 from azure.cli.core.aaz import *
 
 
@@ -22,7 +22,8 @@ class Create(AAZCommand):
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}",
+             "2024-08-01-preview"],
         ]
     }
 
@@ -36,6 +37,7 @@ class Create(AAZCommand):
 
     @classmethod
     def _build_arguments_schema(cls, *args, **kwargs):
+
         if cls._args_schema is not None:
             return cls._args_schema
         cls._args_schema = super()._build_arguments_schema(*args, **kwargs)
@@ -58,10 +60,17 @@ class Create(AAZCommand):
         # define Arg Group "Properties"
 
         _args_schema = cls._args_schema
-        _args_schema.current_version = AAZStrArg(
-            options=["--current-version"],
+        _args_schema.version = AAZStrArg(
+            options=["-v", "--version","--schema-version"],
             arg_group="Properties",
-            help="Current Version of schema",
+            help="Version of schema",
+        )
+
+        _args_schema = cls._args_schema
+        _args_schema.schema_file = AAZStrArg(
+            options=["--schema-file"],
+            arg_group="Properties",
+            help="Schema file",
         )
 
         # define Arg Group "Resource"
@@ -87,7 +96,14 @@ class Create(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
+        # schema_file = self.ctx.args.schema_file
+        # with open(str(schema_file), "r", encoding="utf8") as file:
+        #     content = file.read()
+        #     # print(content)
+        #     self.ctx.args.schema_file = content
+        # # print(self.ctx.args.schema_file.to_serialized_data())
         yield self.SchemasCreateOrUpdate(ctx=self.ctx)()
+        yield self.SchemasVersionCreateOrUpdate(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -197,11 +213,190 @@ class Create(AAZCommand):
 
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("currentVersion", AAZStrType, ".current_version", typ_kwargs={"flags": {"required": True}})
+                properties.set_prop("currentVersion", AAZStrType, ".version", typ_kwargs={"flags": {"required": True}})
 
             tags = _builder.get(".tags")
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
+
+            return self.serialize_content(_content_value)
+
+        def on_200_201(self, session):
+            data = self.deserialize_http_content(session)
+            self.ctx.set_var(
+                "instance",
+                data,
+                schema_builder=self._build_schema_on_200_201
+            )
+
+        _schema_on_200_201 = None
+
+        @classmethod
+        def _build_schema_on_200_201(cls):
+            if cls._schema_on_200_201 is not None:
+                return cls._schema_on_200_201
+
+            cls._schema_on_200_201 = AAZObjectType()
+
+            _schema_on_200_201 = cls._schema_on_200_201
+            _schema_on_200_201.id = AAZStrType(
+                flags={"read_only": True},
+            )
+            _schema_on_200_201.location = AAZStrType(
+                flags={"required": True},
+            )
+            _schema_on_200_201.name = AAZStrType(
+                flags={"read_only": True},
+            )
+            _schema_on_200_201.properties = AAZObjectType()
+            _schema_on_200_201.system_data = AAZObjectType(
+                serialized_name="systemData",
+                flags={"read_only": True},
+            )
+            _schema_on_200_201.tags = AAZDictType()
+            _schema_on_200_201.type = AAZStrType(
+                flags={"read_only": True},
+            )
+
+            properties = cls._schema_on_200_201.properties
+            properties.current_version = AAZStrType(
+                serialized_name="currentVersion",
+                flags={"required": True},
+            )
+            properties.provisioning_state = AAZStrType(
+                serialized_name="provisioningState",
+                flags={"read_only": True},
+            )
+
+            system_data = cls._schema_on_200_201.system_data
+            system_data.created_at = AAZStrType(
+                serialized_name="createdAt",
+            )
+            system_data.created_by = AAZStrType(
+                serialized_name="createdBy",
+            )
+            system_data.created_by_type = AAZStrType(
+                serialized_name="createdByType",
+            )
+            system_data.last_modified_at = AAZStrType(
+                serialized_name="lastModifiedAt",
+            )
+            system_data.last_modified_by = AAZStrType(
+                serialized_name="lastModifiedBy",
+            )
+            system_data.last_modified_by_type = AAZStrType(
+                serialized_name="lastModifiedByType",
+            )
+
+            tags = cls._schema_on_200_201.tags
+            tags.Element = AAZStrType()
+
+            return cls._schema_on_200_201
+
+    class SchemasVersionCreateOrUpdate(AAZHttpOperation):
+        CLIENT_TYPE = "MgmtClient"
+
+        def __call__(self, *args, **kwargs):
+            request = self.make_request()
+            session = self.client.send_request(request=request, stream=False, **kwargs)
+            if session.http_response.status_code in [202]:
+                return self.client.build_lro_polling(
+                    self.ctx.args.no_wait,
+                    session,
+                    self.on_200_201,
+                    self.on_error,
+                    lro_options={"final-state-via": "azure-async-operation"},
+                    path_format_arguments=self.url_parameters,
+                )
+            if session.http_response.status_code in [200, 201]:
+                return self.client.build_lro_polling(
+                    self.ctx.args.no_wait,
+                    session,
+                    self.on_200_201,
+                    self.on_error,
+                    lro_options={"final-state-via": "azure-async-operation"},
+                    path_format_arguments=self.url_parameters,
+                )
+
+            return self.on_error(session.http_response)
+
+        @property
+        def url(self):
+            return self.client.format_url(
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/schemas/{schemaName}/versions/{version}",
+                **self.url_parameters
+            )
+
+        @property
+        def method(self):
+            return "PUT"
+
+        @property
+        def error_format(self):
+            return "MgmtErrorFormat"
+
+        @property
+        def url_parameters(self):
+            parameters = {
+                **self.serialize_url_param(
+                    "resourceGroupName", self.ctx.args.resource_group,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "schemaName", self.ctx.args.schema_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "subscriptionId", self.ctx.subscription_id,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "version", self.ctx.args.version,
+                    required=True,
+                ),
+            }
+            return parameters
+
+        @property
+        def query_parameters(self):
+            parameters = {
+                **self.serialize_query_param(
+                    "api-version", "2024-08-01-preview",
+                    required=True,
+                ),
+            }
+            return parameters
+
+        @property
+        def header_parameters(self):
+            parameters = {
+                **self.serialize_header_param(
+                    "Content-Type", "application/json",
+                ),
+                **self.serialize_header_param(
+                    "Accept", "application/json",
+                ),
+            }
+            return parameters
+
+        @property
+        def content(self):
+            _content_value, _builder = self.new_content_builder(
+                self.ctx.args,
+                typ=AAZObjectType,
+                typ_kwargs={"flags": {"required": True, "client_flatten": True}}
+            )
+            # _builder.set_prop("location", AAZStrType, ".location", typ_kwargs={"flags": {"required": True}})
+            _builder.set_prop("properties", AAZObjectType)
+            # _builder.set_prop("tags", AAZDictType, ".tags")
+
+            properties = _builder.get(".properties")
+            if properties is not None:
+                properties.set_prop("value", AAZStrType, ".schema_file", typ_kwargs={"flags": {"required": True}})
+
+            # tags = _builder.get(".tags")
+            # if tags is not None:
+            #   tags.set_elements(AAZStrType, ".")
 
             return self.serialize_content(_content_value)
 

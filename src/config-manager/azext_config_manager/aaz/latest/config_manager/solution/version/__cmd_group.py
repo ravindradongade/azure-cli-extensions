@@ -12,11 +12,11 @@ from azure.cli.core.aaz import *
 
 
 @register_command_group(
-    "config-manager solution version",
+    "config-manager helm solution version",
     is_preview=True,
 )
 class __CMDGroup(AAZCommandGroup):
-    """Operation on Config Manager Solution Version
+    """Config Manager Solution Version
     """
     pass
 

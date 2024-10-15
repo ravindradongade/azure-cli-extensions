@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager capability-list list",
+    "config-manager capabilities list",
 )
 class List(AAZCommand):
     """List by subscription
@@ -189,9 +189,9 @@ class List(AAZCommand):
             capabilities.Element = AAZObjectType()
 
             _element = cls._schema_on_200.value.Element.properties.capabilities.Element
-            _element.description = AAZStrType(
-                flags={"required": True},
-            )
+            # _element.description = AAZStrType(
+            #     flags={"required": True},
+            # )
             _element.name = AAZStrType(
                 flags={"required": True},
             )

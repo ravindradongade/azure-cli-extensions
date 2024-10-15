@@ -236,27 +236,20 @@ class Create(AAZCommand):
                 })
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_const("capabilities", caps, AAZListType, typ_kwargs={"flags": {"required": True}})
+                # properties.set_const("capabilities", caps, AAZListType, typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("customLocation", AAZStrType, ".custom_location",
                                     typ_kwargs={"flags": {"required": True}})
-                properties.set_prop("hierarchyLevel", AAZStrType, ".hierarchy_level ", typ_kwargs={"flags": {"required": True}})
+                # properties.set_prop("hierarchyLevel", AAZStrType, ".hierarchy_level ", typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("displayName", AAZStrType, ".display_name", typ_kwargs={"flags": {"required": True}})
 
-            capabilities = _builder.get(".properties.capabilities")
-            if capabilities is not None:
-                capabilities.set_elements(AAZObjectType, ".")
-
-            _elements = _builder.get(".properties.capabilities[]")
-            if _elements is not None:
-                _elements.set_prop("description", AAZStrType, ".description", typ_kwargs={"flags": {"required": True}})
-                _elements.set_prop("name", AAZStrType, ".name", typ_kwargs={"flags": {"required": True}})
 
             tags = _builder.get(".tags")
             if tags is not None:
                 tags.set_elements(AAZStrType, ".")
 
             cnt = self.serialize_content(_content_value)
-            print(cnt)
+            cnt["properties"]["capabilities"] = caps
+            cnt["properties"]["hierarchyLevel"] = str(self.ctx.args.hierarchy_level)
             return  cnt
 
         def on_200_201(self, session):
@@ -300,7 +293,7 @@ class Create(AAZCommand):
             properties.capabilities = AAZListType(
                 flags={"required": True},
             )
-            properties.hierarchy_level = AAZListType(
+            properties.hierarchy_level = AAZStrType(
                 serialized_name="hierarchyLevel",
                 flags={"required": True},
             )
@@ -321,9 +314,9 @@ class Create(AAZCommand):
             capabilities.Element = AAZObjectType()
 
             _element = cls._schema_on_200_201.properties.capabilities.Element
-            _element.description = AAZStrType(
-                flags={"required": True},
-            )
+            # _element.description = AAZStrType(
+            #     flags={"required": True},
+            # )
             _element.name = AAZStrType(
                 flags={"required": True},
             )

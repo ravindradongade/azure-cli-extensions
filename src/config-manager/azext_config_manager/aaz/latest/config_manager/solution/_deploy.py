@@ -12,17 +12,17 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution-binding resolve-configuration",
+    "config-manager solution deploy",
     is_preview=True,
 )
-class ResolveConfiguration(AAZCommand):
-    """Post request to resolve configuration
+class Deploy(AAZCommand):
+    """Post request to deploy
     """
 
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/resolveconfiguration", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/deploy", "2024-08-01-preview"],
         ]
     }
 
@@ -30,7 +30,7 @@ class ResolveConfiguration(AAZCommand):
 
     def _handler(self, command_args):
         super()._handler(command_args)
-        return self.build_lro_poller(self._execute_operations, self._output)
+        return self.build_lro_poller(self._execute_operations, None)
 
     _args_schema = None
 
@@ -46,9 +46,19 @@ class ResolveConfiguration(AAZCommand):
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
-        _args_schema.solution_binding_name = AAZStrArg(
-            options=["-n","--name","--solution-binding-name"],
-            help="The name of the SolutionBinding",
+        _args_schema.solution_name = AAZStrArg(
+            options=["--solution-name"],
+            help="The name of the Solution",
+            required=True,
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+
+        _args_schema.deployment_target = AAZStrArg(
+            options=["--deployment-target-name"],
+            help="The name of the Deployment Target",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
@@ -69,7 +79,7 @@ class ResolveConfiguration(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        yield self.SolutionBindingsResolveConfiguration(ctx=self.ctx)()
+        yield self.SolutionBindingsDeploy(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -80,11 +90,7 @@ class ResolveConfiguration(AAZCommand):
     def post_operations(self):
         pass
 
-    def _output(self, *args, **kwargs):
-        result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        return result
-
-    class SolutionBindingsResolveConfiguration(AAZHttpOperation):
+    class SolutionBindingsDeploy(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -94,16 +100,7 @@ class ResolveConfiguration(AAZCommand):
                 return self.client.build_lro_polling(
                     self.ctx.args.no_wait,
                     session,
-                    self.on_200,
-                    self.on_error,
-                    lro_options={"final-state-via": "location"},
-                    path_format_arguments=self.url_parameters,
-                )
-            if session.http_response.status_code in [200]:
-                return self.client.build_lro_polling(
-                    self.ctx.args.no_wait,
-                    session,
-                    self.on_200,
+                    None,
                     self.on_error,
                     lro_options={"final-state-via": "location"},
                     path_format_arguments=self.url_parameters,
@@ -114,7 +111,7 @@ class ResolveConfiguration(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/resolveConfiguration",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/deploy",
                 **self.url_parameters
             )
 
@@ -134,7 +131,8 @@ class ResolveConfiguration(AAZCommand):
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionBindingName", self.ctx.args.solution_binding_name,
+                    "solutionBindingName",
+                    str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -160,9 +158,6 @@ class ResolveConfiguration(AAZCommand):
                 **self.serialize_header_param(
                     "Content-Type", "application/json",
                 ),
-                **self.serialize_header_param(
-                    "Accept", "application/json",
-                ),
             }
             return parameters
 
@@ -173,80 +168,33 @@ class ResolveConfiguration(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
-            _builder.set_prop("solutionVersion", AAZStrType, ".solution_version", typ_kwargs={"flags": {"required": True}})
-
+            solution_instance_id = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutionBindings/{}/solutionInstances/{}-1".format(
+                self.ctx.subscription_id,
+                self.ctx.args.resource_group,
+                str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
+                str(self.ctx.args.solution_version).replace(".", "-"))
+            _builder.set_const("id", solution_instance_id, AAZStrType, typ_kwargs={"flags": {"required": True}})
+            bindiding_config = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-1".format(
+                self.ctx.subscription_id,
+                self.ctx.args.resource_group,
+                str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
+                str(self.ctx.args.solution_version).replace(".", "-"))
+            solution_version = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutions/{}/versions/{}".format(
+                self.ctx.subscription_id, self.ctx.args.resource_group,
+                self.ctx.args.solution_name,
+                self.ctx.args.solution_version)
+            _builder.set_prop("properties", AAZObjectType)
+            properties = _builder.get(".properties")
+            if properties is not None:
+                properties.set_const("solutionBindingConfigurationId", bindiding_config, AAZStrType,
+                                     typ_kwargs={"flags": {"required": True}})
+                properties.set_const("solutionVersionId", solution_version, AAZStrType,
+                                     typ_kwargs={"flags": {"required": True}})
             return self.serialize_content(_content_value)
 
-        def on_200(self, session):
-            data = self.deserialize_http_content(session)
-            self.ctx.set_var(
-                "instance",
-                data,
-                schema_builder=self._build_schema_on_200
-            )
 
-        _schema_on_200 = None
-
-        @classmethod
-        def _build_schema_on_200(cls):
-            if cls._schema_on_200 is not None:
-                return cls._schema_on_200
-
-            cls._schema_on_200 = AAZObjectType()
-
-            _schema_on_200 = cls._schema_on_200
-            _schema_on_200.id = AAZStrType(
-                flags={"read_only": True},
-            )
-            _schema_on_200.name = AAZStrType(
-                flags={"read_only": True},
-            )
-            _schema_on_200.properties = AAZObjectType()
-            _schema_on_200.system_data = AAZObjectType(
-                serialized_name="systemData",
-                flags={"read_only": True},
-            )
-            _schema_on_200.type = AAZStrType(
-                flags={"read_only": True},
-            )
-
-            properties = cls._schema_on_200.properties
-            properties.provisioning_state = AAZStrType(
-                serialized_name="provisioningState",
-                flags={"read_only": True},
-            )
-            properties.revision = AAZStrType(
-                flags={"required": True},
-            )
-            properties.value = AAZStrType(
-                flags={"required": True},
-            )
-
-            system_data = cls._schema_on_200.system_data
-            system_data.created_at = AAZStrType(
-                serialized_name="createdAt",
-            )
-            system_data.created_by = AAZStrType(
-                serialized_name="createdBy",
-            )
-            system_data.created_by_type = AAZStrType(
-                serialized_name="createdByType",
-            )
-            system_data.last_modified_at = AAZStrType(
-                serialized_name="lastModifiedAt",
-            )
-            system_data.last_modified_by = AAZStrType(
-                serialized_name="lastModifiedBy",
-            )
-            system_data.last_modified_by_type = AAZStrType(
-                serialized_name="lastModifiedByType",
-            )
-
-            return cls._schema_on_200
+class _DeployHelper:
+    """Helper class for Deploy"""
 
 
-class _ResolveConfigurationHelper:
-    """Helper class for ResolveConfiguration"""
-
-
-__all__ = ["ResolveConfiguration"]
+__all__ = ["Deploy"]

@@ -194,13 +194,16 @@ class Show(AAZCommand):
             capabilities.Element = AAZObjectType()
 
             _element = cls._schema_on_200.properties.capabilities.Element
-            _element.description = AAZStrType(
-                flags={"required": True},
-            )
+            # _element.description = AAZStrType(
+            #     flags={"required": True},
+            # )
             _element.name = AAZStrType(
                 flags={"required": True},
             )
-
+            properties.hierarchy_level = AAZStrType(
+                serialized_name="hierarchyLevel",
+                flags={"required": True},
+            )
             system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(
                 serialized_name="createdAt",

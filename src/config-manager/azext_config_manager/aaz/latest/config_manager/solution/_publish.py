@@ -12,17 +12,17 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager configuration version create",
+    "config-manager solution publish",
     is_preview=True,
 )
-class Create(AAZCommand):
-    """Create a Dynamic Configuration Version Resource
+class Publish(AAZCommand):
+    """Post request to publish
     """
 
     _aaz_info = {
-        "version": "2024-06-01-preview",
+        "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/microsoft.edge/configurations/{}/dynamicconfigurations/{}/versions/{}", "2024-06-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/publish", "2024-08-01-preview"],
         ]
     }
 
@@ -43,62 +43,61 @@ class Create(AAZCommand):
         # define Arg Group ""
 
         _args_schema = cls._args_schema
-        _args_schema.configuration_name = AAZStrArg(
-            options=["--configuration-name"],
-            help="The name of the Configuration",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
-        _args_schema.dynamic_configuration_name = AAZStrArg(
-            options=["--dynamic-configuration-name"],
-            help="The name of the DynamicConfiguration",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
-        _args_schema.dynamic_configuration_version_name = AAZStrArg(
-            options=["-n", "--name", "--dynamic-configuration-version-name"],
-            help="The name of the DynamicConfigurationVersion",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
+        _args_schema.solution_name = AAZStrArg(
+            options=["--solution-name"],
+            help="The name of the Solution",
+            required=True,
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
 
-        # define Arg Group "Properties"
+        _args_schema.deployment_target = AAZStrArg(
+            options=["--deployment-target-name"],
+            help="The name of the Deployment Target",
+            required=True,
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+
+        # define Arg Group "Body"
 
         _args_schema = cls._args_schema
-        _args_schema.values = AAZStrArg(
-            options=["--values"],
-            arg_group="Properties",
-            help="Values of configuration version",
+        _args_schema.solution_version = AAZStrArg(
+            options=["--solution-version"],
+            arg_group="Body",
+            help="Solution Version",
+            required=True,
         )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        yield self.DynamicConfigurationVersionsCreateOrUpdate(ctx=self.ctx)()
+        yield self.SolutionBindingsPublish(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
     def pre_operations(self):
+        # print(AAZHttpOperation.serialize_content(self.ctx.vars))
         pass
 
     @register_callback
     def post_operations(self):
+
+
         pass
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
         return result
 
-    class DynamicConfigurationVersionsCreateOrUpdate(AAZHttpOperation):
+    class SolutionBindingsPublish(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -108,18 +107,18 @@ class Create(AAZCommand):
                 return self.client.build_lro_polling(
                     self.ctx.args.no_wait,
                     session,
-                    self.on_200_201,
+                    self.on_200,
                     self.on_error,
-                    lro_options={"final-state-via": "azure-async-operation"},
+                    lro_options={"final-state-via": "location"},
                     path_format_arguments=self.url_parameters,
                 )
-            if session.http_response.status_code in [200, 201]:
+            if session.http_response.status_code in [200]:
                 return self.client.build_lro_polling(
                     self.ctx.args.no_wait,
                     session,
-                    self.on_200_201,
+                    self.on_200,
                     self.on_error,
-                    lro_options={"final-state-via": "azure-async-operation"},
+                    lro_options={"final-state-via": "location"},
                     path_format_arguments=self.url_parameters,
                 )
 
@@ -128,13 +127,14 @@ class Create(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions/{dynamicConfigurationVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/publish",
                 **self.url_parameters
             )
 
+
         @property
         def method(self):
-            return "PUT"
+            return "POST"
 
         @property
         def error_format(self):
@@ -144,19 +144,11 @@ class Create(AAZCommand):
         def url_parameters(self):
             parameters = {
                 **self.serialize_url_param(
-                    "configurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationName", self.ctx.args.dynamic_configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationVersionName", self.ctx.args.dynamic_configuration_version_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
                     "resourceGroupName", self.ctx.args.resource_group,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "solutionBindingName", str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -170,7 +162,7 @@ class Create(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-06-01-preview",
+                    "api-version", "2024-08-01-preview",
                     required=True,
                 ),
             }
@@ -195,57 +187,75 @@ class Create(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
+            bindiding_config =  "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-1".format(
+                self.ctx.subscription_id,
+                self.ctx.args.resource_group,str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
+                str(self.ctx.args.solution_version).replace(".","-"))
+            solution_version = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutions/{}/versions/{}".format(
+                self.ctx.subscription_id, self.ctx.args.resource_group,
+                self.ctx.args.solution_name,
+                self.ctx.args.solution_version)
             _builder.set_prop("properties", AAZObjectType)
-
             properties = _builder.get(".properties")
             if properties is not None:
-                properties.set_prop("values", AAZStrType, ".values", typ_kwargs={"flags": {"required": True}})
+                properties.set_const("solutionBindingConfigurationId",bindiding_config, AAZStrType, typ_kwargs={"flags": {"required": True}})
+                properties.set_const("solutionVersionId",solution_version, AAZStrType, typ_kwargs={"flags": {"required": True}})
 
-            return self.serialize_content(_content_value)
+            cont = self.serialize_content(_content_value)
+            print(cont)
+            return cont
 
-        def on_200_201(self, session):
+        def on_200(self, session):
             data = self.deserialize_http_content(session)
             self.ctx.set_var(
                 "instance",
                 data,
-                schema_builder=self._build_schema_on_200_201
+                schema_builder=self._build_schema_on_200
             )
 
-        _schema_on_200_201 = None
+        _schema_on_200 = None
 
         @classmethod
-        def _build_schema_on_200_201(cls):
-            if cls._schema_on_200_201 is not None:
-                return cls._schema_on_200_201
+        def _build_schema_on_200(cls):
+            if cls._schema_on_200 is not None:
+                return cls._schema_on_200
 
-            cls._schema_on_200_201 = AAZObjectType()
+            cls._schema_on_200 = AAZObjectType()
 
-            _schema_on_200_201 = cls._schema_on_200_201
-            _schema_on_200_201.id = AAZStrType(
+            _schema_on_200 = cls._schema_on_200
+            _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200_201.name = AAZStrType(
+            _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200_201.properties = AAZObjectType()
-            _schema_on_200_201.system_data = AAZObjectType(
+            _schema_on_200.properties = AAZObjectType()
+            _schema_on_200.system_data = AAZObjectType(
                 serialized_name="systemData",
                 flags={"read_only": True},
             )
-            _schema_on_200_201.type = AAZStrType(
+            _schema_on_200.type = AAZStrType(
                 flags={"read_only": True},
             )
 
-            properties = cls._schema_on_200_201.properties
+            properties = cls._schema_on_200.properties
             properties.provisioning_state = AAZStrType(
                 serialized_name="provisioningState",
                 flags={"read_only": True},
             )
-            properties.values = AAZStrType(
+            properties.solution_binding_configuration_id = AAZStrType(
+                serialized_name="solutionBindingConfigurationId",
                 flags={"required": True},
             )
+            properties.solution_version_id = AAZStrType(
+                serialized_name="solutionVersionId",
+                flags={"required": True},
+            )
+            properties.state = AAZStrType(
+                flags={"read_only": True},
+            )
 
-            system_data = cls._schema_on_200_201.system_data
+            system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(
                 serialized_name="createdAt",
             )
@@ -265,11 +275,11 @@ class Create(AAZCommand):
                 serialized_name="lastModifiedByType",
             )
 
-            return cls._schema_on_200_201
+            return cls._schema_on_200
 
 
-class _CreateHelper:
-    """Helper class for Create"""
+class _PublishHelper:
+    """Helper class for Publish"""
 
 
-__all__ = ["Create"]
+__all__ = ["Publish"]

@@ -12,7 +12,8 @@ from azure.cli.core.aaz import *
 
 
 @register_command_group(
-    "config-manager capability-list",
+    "config-manager capabilities",
+    is_preview=True,
 )
 class __CMDGroup(AAZCommandGroup):
     """Capability List

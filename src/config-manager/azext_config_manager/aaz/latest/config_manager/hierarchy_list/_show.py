@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager hierarchy-list show",
+    "config-manager hierarchies show",
     is_preview=True,
 )
 class Show(AAZCommand):

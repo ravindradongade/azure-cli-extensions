@@ -12,10 +12,10 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution-binding show",
+    "config-manager solution deployment-status show",
     is_preview=True,
 )
-class Show(AAZCommand):
+class Show2(AAZCommand):
     """Get a Solution Binding Resource
     """
 
@@ -45,9 +45,26 @@ class Show(AAZCommand):
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
-        _args_schema.solution_binding_name = AAZStrArg(
-            options=["-n", "--name", "--solution-binding-name"],
-            help="The name of the SolutionBinding",
+        _args_schema.solution_name = AAZStrArg(
+            options=["-n","--name","--solution-name"],
+            help="The name of the Solution",
+            required=True,
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+
+        _args_schema = cls._args_schema
+        _args_schema.solution_version = AAZStrArg(
+            options=["-v","--version","--solution-version"],
+            arg_group="Body",
+            help="Solution Version",
+            required=True,
+        )
+        _args_schema.deployment_target = AAZStrArg(
+            options=["--deployment-target-name"],
+            help="The name of the Deployment Target",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
@@ -87,7 +104,7 @@ class Show(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/solutionInstances/{instanceName}",
                 **self.url_parameters
             )
 
@@ -107,7 +124,13 @@ class Show(AAZCommand):
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionBindingName", self.ctx.args.solution_binding_name,
+                    "solutionBindingName",
+                    str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "instanceName",
+                    str(self.ctx.args.solution_version).replace(".","-")+"-1",
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -174,42 +197,10 @@ class Show(AAZCommand):
             )
 
             properties = cls._schema_on_200.properties
-            properties.active_solution_instance = AAZStrType(
-                serialized_name="activeSolutionInstance",
+            properties.state = AAZStrType(
+                serialized_name="state",
                 flags={"required": True},
             )
-            properties.configured_solution_versions = AAZListType(
-                serialized_name="configuredSolutionVersions",
-                flags={"read_only": True},
-            )
-            properties.deployment_target = AAZStrType(
-                serialized_name="deploymentTarget",
-                flags={"required": True},
-            )
-            properties.provisioning_state = AAZStrType(
-                serialized_name="provisioningState",
-                flags={"read_only": True},
-            )
-            properties.scope = AAZStrType(
-                flags={"required": True},
-            )
-            properties.solution = AAZStrType(
-                flags={"required": True},
-            )
-
-            configured_solution_versions = cls._schema_on_200.properties.configured_solution_versions
-            configured_solution_versions.Element = AAZObjectType()
-
-            _element = cls._schema_on_200.properties.configured_solution_versions.Element
-            _element.latest_config_revision = AAZStrType(
-                serialized_name="latestConfigRevision",
-                flags={"required": True},
-            )
-            _element.solution_version = AAZStrType(
-                serialized_name="solutionVersion",
-                flags={"required": True},
-            )
-
             system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(
                 serialized_name="createdAt",
@@ -240,4 +231,4 @@ class _ShowHelper:
     """Helper class for Show"""
 
 
-__all__ = ["Show"]
+__all__ = ["Show2"]

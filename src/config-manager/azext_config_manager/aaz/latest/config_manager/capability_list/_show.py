@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager capability-list show",
+    "config-manager capabilities show",
 )
 class Show(AAZCommand):
     """Get a Capability List Resource
@@ -182,12 +182,13 @@ class Show(AAZCommand):
             )
 
             capabilities = cls._schema_on_200.properties.capabilities
+
             capabilities.Element = AAZObjectType()
 
             _element = cls._schema_on_200.properties.capabilities.Element
-            _element.description = AAZStrType(
-                flags={"required": True},
-            )
+            # _element.description = AAZStrType(
+            #     flags={"required": True},
+            # )
             _element.name = AAZStrType(
                 flags={"required": True},
             )

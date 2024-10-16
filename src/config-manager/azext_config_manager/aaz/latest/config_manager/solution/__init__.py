@@ -13,7 +13,7 @@ from ._deployment_status_show import *
 from ._deploy import *
 from .__cmd_group import *
 from ._create import *
-
+from ._update import *
 from ._list import *
 from ._show import *
 

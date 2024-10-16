@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Create(AAZCommand):
-    """Create a Dynamic Configuration Resource
+    """Create a Common Configuration
     """
 
     _aaz_info = {

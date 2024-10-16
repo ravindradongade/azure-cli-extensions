@@ -12,11 +12,11 @@ from azure.cli.core.aaz import *
 
 
 @register_command_group(
-    "config-manager hierarchies",
+    "config-manager hierarchy-list",
     is_preview=True,
 )
 class __CMDGroup(AAZCommandGroup):
-    """Config Manager Hierarchy List
+    """Operations on Hierarchy List
     """
     pass
 

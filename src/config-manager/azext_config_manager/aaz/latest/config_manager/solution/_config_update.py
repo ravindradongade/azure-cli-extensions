@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution config update",
+    "config-manager solution helm update",
     is_preview=True,
 )
 class Update2(AAZCommand):
@@ -80,6 +80,31 @@ class Update2(AAZCommand):
             ),
         )
 
+        _args_schema = cls._args_schema
+        _args_schema.helm_uri = AAZStrArg(
+            options=["--chart"],
+            arg_group="Properties",
+            required=True,
+            help="Helm chart URI",
+        )
+
+        _args_schema = cls._args_schema
+        _args_schema.helm_chart_version = AAZStrArg(
+            options=["--chart-version"],
+            arg_group="Properties",
+            required=True,
+            help="Helm chart version",
+        )
+
+        # define Arg Group "Resource"
+
+        _args_schema = cls._args_schema
+        _args_schema.tags = AAZDictArg(
+            options=["--tags"],
+            arg_group="Resource",
+            help="Resource tags.",
+            nullable=True,
+        )
         # define Arg Group "Resource"
 
         # _args_schema = cls._args_schema
@@ -358,9 +383,12 @@ class Update2(AAZCommand):
             _builder.discriminate_by("kind", "Helm")
 
             properties = _builder.get(".properties")
+
             if properties is not None:
                 properties.set_anytype_elements(".")
 
+            _instance_value["properties"]["helmChartUri"] = self.ctx.args.helm_uri
+            _instance_value["properties"]["helmChartVersion"] = self.ctx.args.helm_chart_version
             _instance_value["properties"]["configurationTemplate"] = updatedPaload
             return _instance_value
 

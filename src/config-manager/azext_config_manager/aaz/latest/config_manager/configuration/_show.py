@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Dynamic Configuration Version Resource
+    """Get common configuration.
     """
 
     _aaz_info = {

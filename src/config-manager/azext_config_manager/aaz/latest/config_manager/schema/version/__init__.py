@@ -9,8 +9,5 @@
 # flake8: noqa
 
 from .__cmd_group import *
-
 from ._list import *
-
-
 from ._wait import *

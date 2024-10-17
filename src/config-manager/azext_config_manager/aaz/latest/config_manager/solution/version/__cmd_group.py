@@ -12,7 +12,7 @@ from azure.cli.core.aaz import *
 
 
 @register_command_group(
-    "config-manager helm solution version",
+    "config-manager solution version",
     is_preview=True,
 )
 class __CMDGroup(AAZCommandGroup):

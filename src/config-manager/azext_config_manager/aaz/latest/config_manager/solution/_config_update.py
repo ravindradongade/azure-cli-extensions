@@ -16,11 +16,11 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution helm update",
+    "config-manager solution config set",
     is_preview=True,
 )
-class Update2(AAZCommand):
-    """Update a Solution Config Template
+class Update3(AAZCommand):
+    """Set the config values for solution
     """
 
     _aaz_info = {
@@ -53,48 +53,52 @@ class Update2(AAZCommand):
             required=True,
         )
         _args_schema.solution_name = AAZStrArg(
-            options=["-n","--name","--solution-name"],
+            options=["--solution-name"],
             help="The name of the Solution",
-            required=True,
+            # required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        _args_schema.solution_version_name = AAZStrArg(
-            options=["-v", "--version", "--solution-version"],
-            help="The current version of the Solution",
-            required=True,
-            # id_part="child_name_1",
+        # _args_schema.site_name = AAZStrArg(
+        #     options=["--name"],
+        #     help="The name of the Site/Deployment Target.",
+        #
+        #     id_part="name",
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[a-zA-Z0-9-]{3,24}$",
+        #     ),
+        # )
+        _args_schema = cls._args_schema
+        _args_schema.level_name = AAZStrArg(
+            options=["--name"],
+            help="The name of level at which value needs to be set.",
+
+            id_part="name",
             fmt=AAZStrArgFormat(
-                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
-            ),
-        )
-        _args_schema.solution_new_version_name = AAZStrArg(
-            options=["--new-version", "--new-solution-version"],
-            help="The version of the Solution needs to be updated",
-            required=True,
-            # id_part="child_name_1",
-            fmt=AAZStrArgFormat(
-                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
 
-        _args_schema = cls._args_schema
-        _args_schema.helm_uri = AAZStrArg(
-            options=["--chart"],
-            arg_group="Properties",
-            required=True,
-            help="Helm chart URI",
-        )
-
-        _args_schema = cls._args_schema
-        _args_schema.helm_chart_version = AAZStrArg(
-            options=["--chart-version"],
-            arg_group="Properties",
-            required=True,
-            help="Helm chart version",
-        )
+        # _args_schema = cls._args_schema
+        # _args_schema.location = AAZResourceLocationArg(
+        #     arg_group="Resource",
+        #     help="The geo-location where the resource lives",
+        #     required=True,
+        #     fmt=AAZResourceLocationArgFormat(
+        #         resource_group_arg="resource_group",
+        #     ),
+        # )
+        # _args_schema.solution_version_name = AAZStrArg(
+        #     options=["-v", "--version", "--solution-version"],
+        #     help="The current version of the Solution",
+        #     required=True,
+        #     # id_part="child_name_1",
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        #     ),
+        # )
 
         # define Arg Group "Resource"
 
@@ -123,12 +127,18 @@ class Update2(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        self.SolutionVersionsGet(ctx=self.ctx)()
+        config_name = str(self.ctx.args.level_name)
+        if len(config_name) > 18:
+            config_name = config_name[:18] + "Config"
+        else:
+            config_name = config_name + "Config"
+            self.ctx.args.level_name = config_name
+        self.SolutionConfigAtDtGet(ctx=self.ctx)()
         self.pre_instance_update(self.ctx.vars.instance)
         self.InstanceUpdateByJson(ctx=self.ctx)()
         self.InstanceUpdateByGeneric(ctx=self.ctx)()
         self.post_instance_update(self.ctx.vars.instance)
-        yield self.SolutionVersionsCreateOrUpdate(ctx=self.ctx)()
+        yield self.DtConfigUpdate(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -151,7 +161,8 @@ class Update2(AAZCommand):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
         return result
 
-    class SolutionVersionsGet(AAZHttpOperation):
+
+    class SolutionConfigAtDtGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -165,7 +176,7 @@ class Update2(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}/versions/{solutionVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/configurations/{configName}/DynamicConfigurations/{solutionName}/versions/version1",
                 **self.url_parameters
             )
 
@@ -179,17 +190,21 @@ class Update2(AAZCommand):
 
         @property
         def url_parameters(self):
+            sol_name = "common"
+            if has_value(self.ctx.args.solution_name):
+                sol_name = self.ctx.args.solution_name
+
             parameters = {
                 **self.serialize_url_param(
                     "resourceGroupName", self.ctx.args.resource_group,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionName", self.ctx.args.solution_name,
+                    "solutionName", sol_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionVersionName", self.ctx.args.solution_version_name,
+                    "configName", self.ctx.args.level_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -203,7 +218,7 @@ class Update2(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-08-01-preview",
+                    "api-version", "2024-06-01-preview",
                     required=True,
                 ),
             }
@@ -238,7 +253,8 @@ class Update2(AAZCommand):
 
             return cls._schema_on_200
 
-    class SolutionVersionsCreateOrUpdate(AAZHttpOperation):
+
+    class DtConfigUpdate(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -268,7 +284,7 @@ class Update2(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}/versions/{solutionVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/configurations/{configName}/DynamicConfigurations/{solutionName}/versions/version1",
                 **self.url_parameters
             )
 
@@ -282,17 +298,21 @@ class Update2(AAZCommand):
 
         @property
         def url_parameters(self):
+            sol_name = "common"
+            if has_value(self.ctx.args.solution_name):
+                sol_name = self.ctx.args.solution_name
+
             parameters = {
                 **self.serialize_url_param(
                     "resourceGroupName", self.ctx.args.resource_group,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionName", self.ctx.args.solution_name,
+                    "solutionName", sol_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionVersionName", self.ctx.args.solution_new_version_name,
+                    "configName", self.ctx.args.level_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -306,7 +326,7 @@ class Update2(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-08-01-preview",
+                    "api-version", "2024-06-01-preview",
                     required=True,
                 ),
             }
@@ -362,8 +382,9 @@ class Update2(AAZCommand):
             editor = "vi"
             if platform.system() == "Windows":
                 editor = "notepad"
+            original = instance["properties"]["values"]
             temp_file = tempfile.NamedTemporaryFile(delete=False)
-            temp_file.write(bytes(str(instance["properties"]["configurationTemplate"]), "utf-8"))
+            temp_file.write(bytes(str(instance["properties"]["values"]), "utf-8"))
             temp_file.close()
             editor_output = subprocess.run([editor, temp_file.name], capture_output=True, check=False)
             if editor_output.returncode != 0:
@@ -377,19 +398,20 @@ class Update2(AAZCommand):
                 value=instance,
                 typ=AAZObjectType
             )
-            _builder.set_const("kind", "Helm", AAZStrType, typ_kwargs={"flags": {"required": True}})
+            # _builder.set_const("kind", "Helm", AAZStrType, typ_kwargs={"flags": {"required": True}})
             _builder.set_prop("properties", AAZFreeFormDictType, ".properties")
 
-            _builder.discriminate_by("kind", "Helm")
+            # _builder.discriminate_by("kind", "Helm")
 
             properties = _builder.get(".properties")
 
             if properties is not None:
                 properties.set_anytype_elements(".")
 
-            _instance_value["properties"]["helmChartUri"] = self.ctx.args.helm_uri
-            _instance_value["properties"]["helmChartVersion"] = self.ctx.args.helm_chart_version
-            _instance_value["properties"]["configurationTemplate"] = updatedPaload
+            # _instance_value["properties"]["helmChartUri"] = self.ctx.args.helm_uri
+            # _instance_value["properties"]["helmChartVersion"] = self.ctx.args.helm_chart_version
+            print("Original:      "+str(type(original)))
+            _instance_value["properties"]["values"] = updatedPaload
             return _instance_value
 
     class InstanceUpdateByGeneric(AAZGenericInstanceUpdateOperation):
@@ -410,19 +432,19 @@ class _UpdateHelper:
     def _build_schema_solution_version_read(cls, _schema):
         if cls._schema_solution_version_read is not None:
             _schema.id = cls._schema_solution_version_read.id
-            _schema.kind = cls._schema_solution_version_read.kind
+            # _schema.kind = cls._schema_solution_version_read.kind
             _schema.name = cls._schema_solution_version_read.name
             _schema.properties = cls._schema_solution_version_read.properties
             _schema.system_data = cls._schema_solution_version_read.system_data
             _schema.type = cls._schema_solution_version_read.type
-            _schema.discriminate_by(
-                "kind",
-                "Helm",
-                cls._schema_solution_version_read.discriminate_by(
-                    "kind",
-                    "Helm",
-                )
-            )
+            # _schema.discriminate_by(
+            #     "kind",
+            #     "Helm",
+            #     cls._schema_solution_version_read.discriminate_by(
+            #         "kind",
+            #         "Helm",
+            #     )
+            # )
             return
 
         cls._schema_solution_version_read = _schema_solution_version_read = AAZObjectType()
@@ -467,19 +489,19 @@ class _UpdateHelper:
         )
 
         _schema.id = cls._schema_solution_version_read.id
-        _schema.kind = cls._schema_solution_version_read.kind
+        # _schema.kind = cls._schema_solution_version_read.kind
         _schema.name = cls._schema_solution_version_read.name
         _schema.properties = cls._schema_solution_version_read.properties
         _schema.system_data = cls._schema_solution_version_read.system_data
         _schema.type = cls._schema_solution_version_read.type
-        _schema.discriminate_by(
-                "kind",
-                "Helm",
-                cls._schema_solution_version_read.discriminate_by(
-                    "kind",
-                    "Helm",
-                )
-            )
+        # _schema.discriminate_by(
+        #         "kind",
+        #         "Helm",
+        #         cls._schema_solution_version_read.discriminate_by(
+        #             "kind",
+        #             "Helm",
+        #         )
+        #     )
 
 
-__all__ = ["Update2"]
+__all__ = ["Update3"]

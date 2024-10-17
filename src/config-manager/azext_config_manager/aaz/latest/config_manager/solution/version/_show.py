@@ -12,25 +12,24 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution version list",
+    "config-manager solution version show",
     is_preview=True,
 )
-class List(AAZCommand):
-    """List Solution Version Resources
+class Show(AAZCommand):
+    """Get a Solution Version Resource
     """
 
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutions/{}/versions", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutions/{}/versions/{}", "2024-08-01-preview"],
         ]
     }
 
-    AZ_SUPPORT_PAGINATION = True
-
     def _handler(self, command_args):
         super()._handler(command_args)
-        return self.build_paging(self._execute_operations, self._output)
+        self._execute_operations()
+        return self._output()
 
     _args_schema = None
 
@@ -50,15 +49,25 @@ class List(AAZCommand):
             options=["-n","--name","--solution-name"],
             help="The name of the Solution",
             required=True,
+            id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+        _args_schema.solution_version_name = AAZStrArg(
+            options=["-v", "--version", "--solution-version"],
+            help="The name of the SolutionVersion",
+            required=True,
+            id_part="child_name_1",
+            fmt=AAZStrArgFormat(
+                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
             ),
         )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        self.SolutionVersionsListBySolution(ctx=self.ctx)()
+        self.SolutionVersionsGet(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -70,11 +79,10 @@ class List(AAZCommand):
         pass
 
     def _output(self, *args, **kwargs):
-        result = self.deserialize_output(self.ctx.vars.instance.value, client_flatten=True)
-        next_link = self.deserialize_output(self.ctx.vars.instance.next_link)
-        return result, next_link
+        result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
+        return result
 
-    class SolutionVersionsListBySolution(AAZHttpOperation):
+    class SolutionVersionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -88,7 +96,7 @@ class List(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}/versions",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}/versions/{solutionVersionName}",
                 **self.url_parameters
             )
 
@@ -109,6 +117,10 @@ class List(AAZCommand):
                 ),
                 **self.serialize_url_param(
                     "solutionName", self.ctx.args.solution_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "solutionVersionName", self.ctx.args.solution_version_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -139,7 +151,6 @@ class List(AAZCommand):
 
         def on_200(self, session):
             data = self.deserialize_http_content(session)
-            print(data)
             self.ctx.set_var(
                 "instance",
                 data,
@@ -156,36 +167,25 @@ class List(AAZCommand):
             cls._schema_on_200 = AAZObjectType()
 
             _schema_on_200 = cls._schema_on_200
-            _schema_on_200.next_link = AAZStrType(
-                serialized_name="nextLink",
-            )
-            _schema_on_200.value = AAZListType(
-                flags={"required": True},
-            )
-
-            value = cls._schema_on_200.value
-            value.Element = AAZObjectType()
-
-            _element = cls._schema_on_200.value.Element
-            _element.id = AAZStrType(
+            _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            _element.kind = AAZStrType(
-                flags={"required": True},
-            )
-            _element.name = AAZStrType(
+            # _schema_on_200.kind = AAZStrType(
+            #     flags={"required": True},
+            # )
+            _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
-            _element.properties = AAZFreeFormDictType()
-            _element.system_data = AAZObjectType(
+            _schema_on_200.properties = AAZFreeFormDictType()
+            _schema_on_200.system_data = AAZObjectType(
                 serialized_name="systemData",
                 flags={"read_only": True},
             )
-            _element.type = AAZStrType(
+            _schema_on_200.type = AAZStrType(
                 flags={"read_only": True},
             )
 
-            system_data = cls._schema_on_200.value.Element.system_data
+            system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(
                 serialized_name="createdAt",
             )
@@ -208,8 +208,8 @@ class List(AAZCommand):
             return cls._schema_on_200
 
 
-class _ListHelper:
-    """Helper class for List"""
+class _ShowHelper:
+    """Helper class for Show"""
 
 
-__all__ = ["List"]
+__all__ = ["Show"]

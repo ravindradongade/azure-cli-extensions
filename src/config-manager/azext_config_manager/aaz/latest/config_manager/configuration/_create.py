@@ -67,7 +67,7 @@ class Create(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.version = AAZStrArg(
-            options=["--version_name"],
+            options=["--version-name"],
             arg_group="Properties",
             help="Version of configuration",
             # fmt=AAZStrArgFormat(
@@ -596,7 +596,7 @@ class Create(AAZCommand):
             version = data["name"]
             data["name"] = self.ctx.args.configuration_name
             data["version"] = version
-            print(data)
+
             self.ctx.set_var(
                 "instance",
                 data,

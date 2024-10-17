@@ -22,7 +22,7 @@ class Show(AAZCommand):
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}/versions/{}", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}", "2024-08-01-preview"],
         ]
     }
 
@@ -54,22 +54,22 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        _args_schema.schema_version_name = AAZStrArg(
-            options=["-v", "--version", "--schema-version"],
-            help="The version of the Schema",
-            required=True,
-            # id_part="child_name_1",
-            fmt=AAZStrArgFormat(
-                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
-            ),
-        )
-        _args_schema = cls._args_schema
-        _args_schema.schema_only = AAZObjectArg(
-            options=["--schema-only"],
-            help="Show only schema without metadata",
-            # arg_group="Resource",
-            blank={},
-        )
+        # _args_schema.schema_version_name = AAZStrArg(
+        #     options=["-v", "--version", "--schema-version"],
+        #     help="The version of the Schema",
+        #     required=True,
+        #     # id_part="child_name_1",
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        #     ),
+        # )
+        # _args_schema = cls._args_schema
+        # _args_schema.schema_only = AAZObjectArg(
+        #     options=["--schema-only"],
+        #     help="Show only schema without metadata",
+        #     # arg_group="Resource",
+        #     blank={},
+        # )
         return cls._args_schema
 
     def _execute_operations(self):
@@ -87,10 +87,8 @@ class Show(AAZCommand):
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        if AAZHttpOperation.serialize_content(self.ctx.args.schema_only) is not None:
-            print(result["properties"]["value"])
-        else:
-            return result
+        print(result)
+        pass
 
     class SchemaVersionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
@@ -129,10 +127,10 @@ class Show(AAZCommand):
                     "schemaName", self.ctx.args.schema_name,
                     required=True,
                 ),
-                **self.serialize_url_param(
-                    "schemaVersionName", self.ctx.args.schema_version_name,
-                    required=True,
-                ),
+                # **self.serialize_url_param(
+                #     "schemaVersionName", self.ctx.args.schema_version_name,
+                #     required=True,
+                # ),
                 **self.serialize_url_param(
                     "subscriptionId", self.ctx.subscription_id,
                     required=True,
@@ -197,9 +195,9 @@ class Show(AAZCommand):
                 serialized_name="provisioningState",
                 flags={"read_only": True},
             )
-            properties.value = AAZStrType(
-                flags={"required": True},
-            )
+            # properties.value = AAZStrType(
+            #     flags={"required": True},
+            # )
 
             system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(

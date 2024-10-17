@@ -42,15 +42,15 @@ class List(AAZCommand):
 
         # define Arg Group ""
 
-        _args_schema = cls._args_schema
-        _args_schema.configuration_name = AAZStrArg(
-            options=["-n","--name","--configuration-name"],
-            help="The name of the Configuration",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
+        # _args_schema = cls._args_schema
+        # _args_schema.configuration_name = AAZStrArg(
+        #     options=["-n","--name","--configuration-name"],
+        #     help="The name of the Configuration",
+        #     required=True,
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[a-zA-Z0-9-]{3,24}$",
+        #     ),
+        # )
         # _args_schema.dynamic_configuration_name = AAZStrArg(
         #     options=["--dynamic-configuration-name"],
         #     help="The name of the DynamicConfiguration",

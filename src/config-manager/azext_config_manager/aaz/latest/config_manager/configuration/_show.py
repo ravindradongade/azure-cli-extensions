@@ -52,22 +52,22 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        _args_schema.version_name = AAZStrArg(
-            options=["--version-name"],
-            help="The version name of the DynamicConfiguration",
-            required=True,
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
+        # _args_schema.version_name = AAZStrArg(
+        #     options=["--version-name"],
+        #     help="The version name of the DynamicConfiguration",
+        #     required=True,
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[a-zA-Z0-9-]{3,24}$",
+        #     ),
+        # )
 
-        _args_schema = cls._args_schema
-        _args_schema.config_only = AAZObjectArg(
-            options=["--config-only"],
-            help="Show only config, without metadata",
-            arg_group="Resource",
-            blank={},
-        )
+        # _args_schema = cls._args_schema
+        # _args_schema.config_only = AAZObjectArg(
+        #     options=["--config-only"],
+        #     help="Show only config, without metadata",
+        #     arg_group="Resource",
+        #     blank={},
+        # )
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
@@ -88,14 +88,14 @@ class Show(AAZCommand):
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        if AAZHttpOperation.serialize_content(self.ctx.args.config_only) is not None:
-            # print(AAZHttpOperation.serialize_content(self.ctx.args.config_only))
-            print(result["properties"]["values"])
-        else:
-            return result
+        # if AAZHttpOperation.serialize_content(self.ctx.args.config_only) is not None:
+        #     # print(AAZHttpOperation.serialize_content(self.ctx.args.config_only))
+        #     print(result["properties"]["values"])
+        # else:
+        #     return result
 
         # print(result)
-        # return result
+        return result
 
     class DynamicConfigurationVersionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
@@ -111,7 +111,7 @@ class Show(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions/{dynamicConfigurationVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}",
                 **self.url_parameters
             )
 
@@ -134,10 +134,10 @@ class Show(AAZCommand):
                     "dynamicConfigurationName", self.ctx.args.configuration_name,
                     required=True,
                 ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationVersionName", self.ctx.args.version_name,
-                    required=True,
-                ),
+                # **self.serialize_url_param(
+                #     "dynamicConfigurationVersionName", self.ctx.args.version_name,
+                #     required=True,
+                # ),
                 **self.serialize_url_param(
                     "resourceGroupName", self.ctx.args.resource_group,
                     required=True,
@@ -207,9 +207,9 @@ class Show(AAZCommand):
                 serialized_name="provisioningState",
                 flags={"read_only": True},
             )
-            properties.values = AAZStrType(
-                flags={"required": True},
-            )
+            # properties.values = AAZStrType(
+            #     flags={"required": True},
+            # )
 
             system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(

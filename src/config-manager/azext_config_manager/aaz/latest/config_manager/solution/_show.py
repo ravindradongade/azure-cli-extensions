@@ -16,13 +16,13 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Solution Version Resource
+    """Get a Solution
     """
 
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutions/{}/versions/{}", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutions/{}", "2024-08-01-preview"],
         ]
     }
 
@@ -54,15 +54,15 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        _args_schema.solution_version_name = AAZStrArg(
-            options=["-v", "--version", "--solution-version"],
-            help="The name of the SolutionVersion",
-            required=True,
-            id_part="child_name_1",
-            fmt=AAZStrArgFormat(
-                pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
-            ),
-        )
+        # _args_schema.solution_version_name = AAZStrArg(
+        #     options=["-v", "--version", "--solution-version"],
+        #     help="The name of the SolutionVersion",
+        #     required=True,
+        #     id_part="child_name_1",
+        #     fmt=AAZStrArgFormat(
+        #         pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        #     ),
+        # )
         return cls._args_schema
 
     def _execute_operations(self):
@@ -96,7 +96,7 @@ class Show(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}/versions/{solutionVersionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutions/{solutionName}",
                 **self.url_parameters
             )
 
@@ -119,10 +119,10 @@ class Show(AAZCommand):
                     "solutionName", self.ctx.args.solution_name,
                     required=True,
                 ),
-                **self.serialize_url_param(
-                    "solutionVersionName", self.ctx.args.solution_version_name,
-                    required=True,
-                ),
+                # **self.serialize_url_param(
+                #     "solutionVersionName", self.ctx.args.solution_version_name,
+                #     required=True,
+                # ),
                 **self.serialize_url_param(
                     "subscriptionId", self.ctx.subscription_id,
                     required=True,
@@ -170,9 +170,9 @@ class Show(AAZCommand):
             _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200.kind = AAZStrType(
-                flags={"required": True},
-            )
+            # _schema_on_200.kind = AAZStrType(
+            #     flags={"required": True},
+            # )
             _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )

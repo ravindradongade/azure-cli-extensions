@@ -16,13 +16,13 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List common configurations
+    """List onfiguration Resources
     """
 
     _aaz_info = {
         "version": "2024-06-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/microsoft.edge/configurations/{}/dynamicconfigurations/{}/versions", "2024-06-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/microsoft.edge/configurations/{}/dynamicconfigurations", "2024-06-01-preview"],
         ]
     }
 
@@ -42,23 +42,15 @@ class List(AAZCommand):
 
         # define Arg Group ""
 
-        # _args_schema = cls._args_schema
-        # _args_schema.configuration_name = AAZStrArg(
-        #     options=["-n","--name","--configuration-name"],
-        #     help="The name of the Configuration",
-        #     required=True,
-        #     fmt=AAZStrArgFormat(
-        #         pattern="^[a-zA-Z0-9-]{3,24}$",
-        #     ),
-        # )
-        # _args_schema.dynamic_configuration_name = AAZStrArg(
-        #     options=["--dynamic-configuration-name"],
-        #     help="The name of the DynamicConfiguration",
-        #     required=True,
-        #     fmt=AAZStrArgFormat(
-        #         pattern="^[a-zA-Z0-9-]{3,24}$",
-        #     ),
-        # )
+        _args_schema = cls._args_schema
+        _args_schema.configuration_name = AAZStrArg(
+            options=["-n","--name","--configuration-name"],
+            help="The name of the Configuration",
+            required=True,
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
         _args_schema.resource_group = AAZResourceGroupNameArg(
             required=True,
         )
@@ -66,7 +58,7 @@ class List(AAZCommand):
 
     def _execute_operations(self):
         self.pre_operations()
-        self.DynamicConfigurationVersionsListByDynamicConfiguration(ctx=self.ctx)()
+        self.DynamicConfigurationsListByConfiguration(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -82,7 +74,7 @@ class List(AAZCommand):
         next_link = self.deserialize_output(self.ctx.vars.instance.next_link)
         return result, next_link
 
-    class DynamicConfigurationVersionsListByDynamicConfiguration(AAZHttpOperation):
+    class DynamicConfigurationsListByConfiguration(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -96,7 +88,7 @@ class List(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations",
                 **self.url_parameters
             )
 
@@ -113,10 +105,6 @@ class List(AAZCommand):
             parameters = {
                 **self.serialize_url_param(
                     "configurationName", self.ctx.args.configuration_name,
-                    required=True,
-                ),
-                **self.serialize_url_param(
-                    "dynamicConfigurationName", self.ctx.args.configuration_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -194,12 +182,21 @@ class List(AAZCommand):
             )
 
             properties = cls._schema_on_200.value.Element.properties
+            properties.current_version = AAZStrType(
+                serialized_name="currentVersion",
+                flags={"required": True},
+            )
+            properties.dynamic_configuration_model = AAZStrType(
+                serialized_name="dynamicConfigurationModel",
+                flags={"read_only": True},
+            )
+            properties.dynamic_configuration_type = AAZStrType(
+                serialized_name="dynamicConfigurationType",
+                flags={"read_only": True},
+            )
             properties.provisioning_state = AAZStrType(
                 serialized_name="provisioningState",
                 flags={"read_only": True},
-            )
-            properties.values = AAZStrType(
-                flags={"required": True},
             )
 
             system_data = cls._schema_on_200.value.Element.system_data

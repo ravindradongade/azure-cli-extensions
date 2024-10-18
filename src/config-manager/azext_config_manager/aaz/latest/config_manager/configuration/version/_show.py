@@ -12,17 +12,17 @@ from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager schema show",
+    "config-manager configuration version show",
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Schema Resource
+    """Get a Dynamic Configuration Version Resource
     """
 
     _aaz_info = {
-        "version": "2024-08-01-preview",
+        "version": "2024-06-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/microsoft.edge/configurations/{}/dynamicconfigurations/{}/versions/{}", "2024-06-01-preview"],
         ]
     }
 
@@ -42,23 +42,41 @@ class Show(AAZCommand):
         # define Arg Group ""
 
         _args_schema = cls._args_schema
-        _args_schema.resource_group = AAZResourceGroupNameArg(
-            required=True,
-        )
-        _args_schema.schema_name = AAZStrArg(
-            options=["-n", "--name", "--schema-name"],
-            help="The name of the Schema",
+        _args_schema.configuration_name = AAZStrArg(
+            options=["--configuration-name"],
+            help="The name of the Configuration",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
+        _args_schema.dynamic_configuration_name = AAZStrArg(
+            options=["--dynamic-configuration-name"],
+            help="The name of the DynamicConfiguration",
+            required=True,
+            id_part="child_name_1",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+        _args_schema.dynamic_configuration_version_name = AAZStrArg(
+            options=["-n", "--name", "--dynamic-configuration-version-name"],
+            help="The name of the DynamicConfigurationVersion",
+            required=True,
+            id_part="child_name_2",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+        _args_schema.resource_group = AAZResourceGroupNameArg(
+            required=True,
+        )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        self.SchemasGet(ctx=self.ctx)()
+        self.DynamicConfigurationVersionsGet(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -73,7 +91,7 @@ class Show(AAZCommand):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
         return result
 
-    class SchemasGet(AAZHttpOperation):
+    class DynamicConfigurationVersionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -87,7 +105,7 @@ class Show(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/schemas/{schemaName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configurationName}/dynamicConfigurations/{dynamicConfigurationName}/versions/{dynamicConfigurationVersionName}",
                 **self.url_parameters
             )
 
@@ -103,11 +121,19 @@ class Show(AAZCommand):
         def url_parameters(self):
             parameters = {
                 **self.serialize_url_param(
-                    "resourceGroupName", self.ctx.args.resource_group,
+                    "configurationName", self.ctx.args.configuration_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "schemaName", self.ctx.args.schema_name,
+                    "dynamicConfigurationName", self.ctx.args.dynamic_configuration_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "dynamicConfigurationVersionName", self.ctx.args.dynamic_configuration_version_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "resourceGroupName", self.ctx.args.resource_group,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -121,7 +147,7 @@ class Show(AAZCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-08-01-preview",
+                    "api-version", "2024-06-01-preview",
                     required=True,
                 ),
             }
@@ -157,9 +183,6 @@ class Show(AAZCommand):
             _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200.location = AAZStrType(
-                flags={"required": True},
-            )
             _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
@@ -168,19 +191,17 @@ class Show(AAZCommand):
                 serialized_name="systemData",
                 flags={"read_only": True},
             )
-            _schema_on_200.tags = AAZDictType()
             _schema_on_200.type = AAZStrType(
                 flags={"read_only": True},
             )
 
             properties = cls._schema_on_200.properties
-            properties.current_version = AAZStrType(
-                serialized_name="currentVersion",
-                flags={"required": True},
-            )
             properties.provisioning_state = AAZStrType(
                 serialized_name="provisioningState",
                 flags={"read_only": True},
+            )
+            properties.values = AAZStrType(
+                flags={"required": True},
             )
 
             system_data = cls._schema_on_200.system_data
@@ -202,9 +223,6 @@ class Show(AAZCommand):
             system_data.last_modified_by_type = AAZStrType(
                 serialized_name="lastModifiedByType",
             )
-
-            tags = cls._schema_on_200.tags
-            tags.Element = AAZStrType()
 
             return cls._schema_on_200
 

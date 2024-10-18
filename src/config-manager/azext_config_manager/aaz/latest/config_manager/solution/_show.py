@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Solution
+    """Get a Solution resource
     """
 
     _aaz_info = {
@@ -46,7 +46,7 @@ class Show(AAZCommand):
             required=True,
         )
         _args_schema.solution_name = AAZStrArg(
-            options=["-n","--name","--solution-name"],
+            options=["-n", "--name", "--solution-name"],
             help="The name of the Solution",
             required=True,
             id_part="name",
@@ -54,20 +54,11 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        # _args_schema.solution_version_name = AAZStrArg(
-        #     options=["-v", "--version", "--solution-version"],
-        #     help="The name of the SolutionVersion",
-        #     required=True,
-        #     id_part="child_name_1",
-        #     fmt=AAZStrArgFormat(
-        #         pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
-        #     ),
-        # )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
-        self.SolutionVersionsGet(ctx=self.ctx)()
+        self.SolutionsGet(ctx=self.ctx)()
         self.post_operations()
 
     @register_callback
@@ -82,7 +73,7 @@ class Show(AAZCommand):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
         return result
 
-    class SolutionVersionsGet(AAZHttpOperation):
+    class SolutionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
@@ -119,10 +110,6 @@ class Show(AAZCommand):
                     "solutionName", self.ctx.args.solution_name,
                     required=True,
                 ),
-                # **self.serialize_url_param(
-                #     "solutionVersionName", self.ctx.args.solution_version_name,
-                #     required=True,
-                # ),
                 **self.serialize_url_param(
                     "subscriptionId", self.ctx.subscription_id,
                     required=True,
@@ -170,19 +157,64 @@ class Show(AAZCommand):
             _schema_on_200.id = AAZStrType(
                 flags={"read_only": True},
             )
-            # _schema_on_200.kind = AAZStrType(
-            #     flags={"required": True},
-            # )
+            _schema_on_200.location = AAZStrType(
+                flags={"required": True},
+            )
             _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200.properties = AAZFreeFormDictType()
+            _schema_on_200.properties = AAZObjectType()
             _schema_on_200.system_data = AAZObjectType(
                 serialized_name="systemData",
                 flags={"read_only": True},
             )
+            _schema_on_200.tags = AAZDictType()
             _schema_on_200.type = AAZStrType(
                 flags={"read_only": True},
+            )
+
+            properties = cls._schema_on_200.properties
+            properties.capabilities = AAZListType(
+                flags={"required": True},
+            )
+            properties.configuration_links = AAZListType(
+                serialized_name="configurationLinks",
+                flags={"read_only": True},
+            )
+            properties.current_version = AAZStrType(
+                serialized_name="currentVersion",
+                flags={"read_only": True},
+            )
+            properties.description = AAZStrType(
+                flags={"required": True},
+            )
+            properties.provisioning_state = AAZStrType(
+                serialized_name="provisioningState",
+                flags={"read_only": True},
+            )
+
+            capabilities = cls._schema_on_200.properties.capabilities
+            capabilities.Element = AAZObjectType()
+
+            _element = cls._schema_on_200.properties.capabilities.Element
+            _element.description = AAZStrType(
+                flags={"required": True},
+            )
+            _element.name = AAZStrType(
+                flags={"required": True},
+            )
+
+            configuration_links = cls._schema_on_200.properties.configuration_links
+            configuration_links.Element = AAZObjectType()
+
+            _element = cls._schema_on_200.properties.configuration_links.Element
+            _element.configuration_id = AAZStrType(
+                serialized_name="configurationId",
+                flags={"required": True},
+            )
+            _element.hierarchy_type = AAZStrType(
+                serialized_name="hierarchyType",
+                flags={"required": True},
             )
 
             system_data = cls._schema_on_200.system_data
@@ -204,6 +236,9 @@ class Show(AAZCommand):
             system_data.last_modified_by_type = AAZStrType(
                 serialized_name="lastModifiedByType",
             )
+
+            tags = cls._schema_on_200.tags
+            tags.Element = AAZStrType()
 
             return cls._schema_on_200
 

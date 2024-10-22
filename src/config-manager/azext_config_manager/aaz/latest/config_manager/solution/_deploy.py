@@ -22,7 +22,7 @@ class Deploy(AAZCommand):
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/solutionbindings/{}/deploy", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Edge/solutionbindings/{}/deploy", "2024-08-01-preview"],
         ]
     }
 
@@ -111,7 +111,7 @@ class Deploy(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/solutionBindings/{solutionBindingName}/deploy",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/solutionBindings/{solutionBindingName}/deploy",
                 **self.url_parameters
             )
 
@@ -168,18 +168,18 @@ class Deploy(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
-            solution_instance_id = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutionBindings/{}/solutionInstances/{}-1".format(
+            solution_instance_id = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionInstances/{}-1".format(
                 self.ctx.subscription_id,
                 self.ctx.args.resource_group,
                 str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
                 str(self.ctx.args.solution_version).replace(".", "-"))
             _builder.set_const("id", solution_instance_id, AAZStrType, typ_kwargs={"flags": {"required": True}})
-            bindiding_config = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-1".format(
+            bindiding_config = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-1".format(
                 self.ctx.subscription_id,
                 self.ctx.args.resource_group,
                 str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
                 str(self.ctx.args.solution_version).replace(".", "-"))
-            solution_version = "/subscriptions/{}/resourceGroups/{}/providers/Private.Edge/solutions/{}/versions/{}".format(
+            solution_version = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutions/{}/versions/{}".format(
                 self.ctx.subscription_id, self.ctx.args.resource_group,
                 self.ctx.args.solution_name,
                 self.ctx.args.solution_version)

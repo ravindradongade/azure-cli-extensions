@@ -43,7 +43,7 @@ class Show(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.configuration_name = AAZStrArg(
-            options=["--configuration-name"],
+            options=["-n", "--name", "--configuration-name"],
             help="The name of the Configuration",
             required=True,
             id_part="name",
@@ -51,17 +51,9 @@ class Show(AAZCommand):
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
-        _args_schema.dynamic_configuration_name = AAZStrArg(
-            options=["--dynamic-configuration-name"],
-            help="The name of the DynamicConfiguration",
-            required=True,
-            id_part="child_name_1",
-            fmt=AAZStrArgFormat(
-                pattern="^[a-zA-Z0-9-]{3,24}$",
-            ),
-        )
+
         _args_schema.dynamic_configuration_version_name = AAZStrArg(
-            options=["-n", "--name", "--dynamic-configuration-version-name"],
+            options=[ "--version-name"],
             help="The name of the DynamicConfigurationVersion",
             required=True,
             id_part="child_name_2",
@@ -125,7 +117,7 @@ class Show(AAZCommand):
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "dynamicConfigurationName", self.ctx.args.dynamic_configuration_name,
+                    "dynamicConfigurationName", self.ctx.args.configuration_name,
                     required=True,
                 ),
                 **self.serialize_url_param(

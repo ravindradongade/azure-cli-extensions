@@ -22,7 +22,7 @@ class List(AAZCommand):
     _aaz_info = {
         "version": "2024-08-01-preview",
         "resources": [
-            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/private.edge/schemas/{}/versions", "2024-08-01-preview"],
+            ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Edge/schemas/{}/versions", "2024-08-01-preview"],
         ]
     }
 
@@ -47,7 +47,7 @@ class List(AAZCommand):
             required=True,
         )
         _args_schema.schema_name = AAZStrArg(
-            options=["n","--name","--schema-name"],
+            options=["-n","--name","--schema-name"],
             help="The name of the Schema",
             required=True,
             fmt=AAZStrArgFormat(
@@ -88,7 +88,7 @@ class List(AAZCommand):
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Private.Edge/schemas/{schemaName}/versions",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/schemas/{schemaName}/versions",
                 **self.url_parameters
             )
 

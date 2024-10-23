@@ -96,17 +96,16 @@ class Deploy(AAZCommand):
         def __call__(self, *args, **kwargs):
             request = self.make_request()
             session = self.client.send_request(request=request, stream=False, **kwargs)
-            if session.http_response.status_code in [202]:
+            if session.http_response.status_code in [200,202]:
+                print("******************************************************************* 202*************************************")
                 return self.client.build_lro_polling(
                     self.ctx.args.no_wait,
                     session,
-                    None,
+                    self.on_200_202,
                     self.on_error,
                     lro_options={"final-state-via": "location"},
                     path_format_arguments=self.url_parameters,
                 )
-
-            return self.on_error(session.http_response)
 
         @property
         def url(self):
@@ -191,7 +190,63 @@ class Deploy(AAZCommand):
                 properties.set_const("solutionVersionId", solution_version, AAZStrType,
                                      typ_kwargs={"flags": {"required": True}})
             return self.serialize_content(_content_value)
+        def on_200_202(self, session):
+            data = self.deserialize_http_content(session)
+            self.ctx.set_var(
+                "instance",
+                data,
+                schema_builder=self._build_schema_on_200_202
+            )
 
+        _schema_on_200_202 = None
+        @classmethod
+        def _build_schema_on_200_202(cls):
+            if cls._schema_on_200_202 is not None:
+                return cls._schema_on_200_202
+
+            cls._schema_on_200_202 = AAZObjectType()
+
+            _schema_on_200_202 = cls._schema_on_200_202
+            _schema_on_200_202.id = AAZStrType(
+                flags={"read_only": True},
+            )
+
+            _schema_on_200_202.name = AAZStrType(
+                flags={"read_only": True},
+            )
+            _schema_on_200_202.version = AAZStrType(
+                flags={"read_only": True},
+            )
+
+            _schema_on_200_202.system_data = AAZObjectType(
+                serialized_name="systemData",
+                flags={"read_only": True},
+            )
+            _schema_on_200_202.type = AAZStrType(
+                flags={"read_only": True},
+            )
+
+            system_data = cls._schema_on_200_202.system_data
+            system_data.created_at = AAZStrType(
+                serialized_name="createdAt",
+            )
+            system_data.created_by = AAZStrType(
+                serialized_name="createdBy",
+            )
+            system_data.created_by_type = AAZStrType(
+                serialized_name="createdByType",
+            )
+            system_data.last_modified_at = AAZStrType(
+                serialized_name="lastModifiedAt",
+            )
+            system_data.last_modified_by = AAZStrType(
+                serialized_name="lastModifiedBy",
+            )
+            system_data.last_modified_by_type = AAZStrType(
+                serialized_name="lastModifiedByType",
+            )
+
+            return cls._schema_on_200_202
 
 class _DeployHelper:
     """Helper class for Deploy"""

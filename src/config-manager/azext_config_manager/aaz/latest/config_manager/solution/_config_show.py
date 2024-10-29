@@ -117,8 +117,21 @@ class ShowConfig(AAZCommand):
             session = self.client.send_request(request=request, stream=False, **kwargs)
             if session.http_response.status_code in [200]:
                 return self.on_200(session)
+            config = dict()
+            config["properties"] = dict()
+            config["properties"]["values"] = "{}"
+            # # config.config = AAZStrType()
+            # # config.config = "[]"
+            if session.http_response.status_code in [404]:
+                self.ctx.set_var(
+                    "instance",
+                    config,
+                    schema_builder=self._build_schema_on_404
+                )
+            #     return
+            else:
+                return self.on_error(session.http_response)
 
-            return self.on_error(session.http_response)
 
         @property
         def url(self):
@@ -189,6 +202,14 @@ class ShowConfig(AAZCommand):
             )
 
         _schema_on_200 = None
+
+        @classmethod
+        def _build_schema_on_404(cls):
+            cls._schema_on_200 = AAZObjectType()
+            _schema_on_200 = cls._schema_on_200
+            _schema_on_200.properties = AAZFreeFormDictType()
+            return cls._schema_on_200
+
 
         @classmethod
         def _build_schema_on_200(cls):

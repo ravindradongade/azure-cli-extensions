@@ -9,7 +9,8 @@ import os
 import platform
 import subprocess
 import tempfile
-
+import tkinter as tk
+import tkinter.scrolledtext as scrolledtext
 # pylint: skip-file
 # flake8: noqa
 
@@ -346,40 +347,78 @@ class Update3(AAZCommand):
             self._update_instance(self.ctx.vars.instance)
 
         def _update_instance(self, instance):
-            editor = "vi"
-
-            if platform.system() == "Windows":
-                editor = "notepad"
-            temp_file = tempfile.NamedTemporaryFile(delete=False)
-            temp_file.write(bytes(str(instance["properties"]["values"]), "utf-8"))
-            temp_file.close()
-            editor_output = subprocess.run([editor, temp_file.name], capture_output=True, check=False)
-            if editor_output.returncode != 0:
-                os.unlink(temp_file.name)
-                raise CLIInternalError("Failed to update instance")
-            with open(temp_file.name, "rb") as f:
-                updatedPaload = f.read().decode("utf-8")
-            os.unlink(temp_file.name)
-
+            root = tk.Tk()
             _instance_value, _builder = self.new_content_builder(
                 self.ctx.args,
                 value=instance,
                 typ=AAZObjectType
             )
-            # _builder.set_const("kind", "Helm", AAZStrType, typ_kwargs={"flags": {"required": True}})
-            _builder.set_prop("properties", AAZFreeFormDictType, ".properties")
+            def get_input():
+                updatedPaload = txt.get(1.0, tk.END + "-1c")
+                # print(result)
+                root.destroy()
 
-            # _builder.discriminate_by("kind", "Helm")
+                # _builder.set_const("kind", "Helm", AAZStrType, typ_kwargs={"flags": {"required": True}})
+                _builder.set_prop("properties", AAZFreeFormDictType, ".properties")
 
-            properties = _builder.get(".properties")
+                # _builder.discriminate_by("kind", "Helm")
 
-            if properties is not None:
-                properties.set_anytype_elements(".")
+                properties = _builder.get(".properties")
 
-            # _instance_value["properties"]["helmChartUri"] = self.ctx.args.helm_uri
-            # _instance_value["properties"]["helmChartVersion"] = self.ctx.args.helm_chart_version
-            _instance_value["properties"]["values"] = updatedPaload
+                if properties is not None:
+                    properties.set_anytype_elements(".")
+
+                # _instance_value["properties"]["helmChartUri"] = self.ctx.args.helm_uri
+                # _instance_value["properties"]["helmChartVersion"] = self.ctx.args.helm_chart_version
+                _instance_value["properties"]["values"] = updatedPaload
+
+            root.protocol("WM_DELETE_WINDOW", lambda : get_input())
+            root.title(str(self.ctx.args.solution_name))
+            # T = tk.Text(root, height=5, width=40)
+            txt = scrolledtext.ScrolledText(root, undo=True)
+            txt['font'] = ('consolas', '12')
+            txt.pack(expand=True, fill='both')
+            # root.geometry("250x170")
+            # scroll_bar = tk.Scrollbar(root)
+            # scroll_bar.pack(side=tk.RIGHT)
+
+            # T.pack(side=tk.LEFT)
+            # l = tk.Label(root, text=instance["name"])
+            # l.config(font=("Courier", 14))
+            content = instance["properties"]["values"]
+            # b2 = tk.Button(root, text="Save",
+            #              command=lambda: get_input())
+            # l.pack()
+            # T.pack()
+            # b1.pack()
+            # b2.pack()
+
+            # Insert The Fact.
+            txt.insert(tk.END, content)
+
+            tk.mainloop()
+
+
+
+            # editor = "vi"
+            #
+            # if platform.system() == "Windows":
+            #     editor = "notepad"
+            # temp_file = tempfile.NamedTemporaryFile(delete=False)
+            # temp_file.write(bytes(str(instance["properties"]["values"]), "utf-8"))
+            # temp_file.close()
+            # editor_output = subprocess.run([editor, temp_file.name], stdout=sys.stdout, stdin=sys.stdin,
+            #                                stderr=sys.stdout, check=False)
+            # if editor_output.returncode != 0:
+            #     os.unlink(temp_file.name)
+            #     raise CLIInternalError("Failed to update instance")
+            # with open(temp_file.name, "rb") as f:
+            #     updatedPaload = f.read().decode("utf-8")
+            # os.unlink(temp_file.name)
+
+
             return _instance_value
+
 
 
     class InstanceUpdateByGeneric(AAZGenericInstanceUpdateOperation):

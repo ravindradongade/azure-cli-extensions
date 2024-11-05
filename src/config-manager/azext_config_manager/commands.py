@@ -9,7 +9,14 @@
 # pylint: disable=too-many-statements
 
 # from azure.cli.core.commands import CliCommandType
+from azure.cli.core.commands import CliCommandType
+from azext_config_manager._client_factory import cf_cosmosdb_preview
 
+def load_command_table(self, _):
+    configmanager_service_sdk = CliCommandType(
+        operations_tmpl='azext_config_manager.sdk#ConfigManagerClient.{}',
+        client_factory=cf_cosmosdb_preview)
 
-def load_command_table(self, _):  # pylint: disable=unused-argument
-    pass
+    with self.command_group('config-manager rbak', configmanager_service_sdk, client_factory=cf_cosmosdb_preview) as g:
+        g.custom_command('create', 'cli_cm_rbac_create')
+   

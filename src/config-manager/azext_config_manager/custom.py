@@ -17,4 +17,4 @@ def cli_cm_rbac_create(client, resource_group_name, dt_name):
 
     '''Creates RBAC for Deployment'''
 
-    print("hello there :)")
+    client.get_all_solution_bindings(resource_group_name)

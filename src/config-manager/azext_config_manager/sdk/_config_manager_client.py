@@ -6,6 +6,9 @@ from azure.core.utils import case_insensitive_dict
 from azure.mgmt.core import ARMPipelineClient
 from azure.mgmt.core.policies import ARMAutoResourceProviderRegistrationPolicy
 
+import json
+import uuid
+
 from ._configuration import ConfigManagerClientConfiguration
 
 class ConfigManagerClient:
@@ -38,12 +41,29 @@ class ConfigManagerClient:
                 policies.SensitiveHeaderCleanupPolicy(**kwargs) if self._config.redirect_policy else None,
                 self._config.http_logging_policy,
             ]
-        print(base_url)
         self._client: ARMPipelineClient = ARMPipelineClient(base_url=base_url, config=self._config, **kwargs)
     
-    def get_all_solution_bindings(self, rg):
-        _url = f"/subscriptions/{self._config.subscription_id}/resourceGroups/{rg}/providers/Microsoft.Edge/solutionBindings"
+    def assign_role_to_solution_bindings(self, resource_group, deployment_target, role_id, principal_id):
+        _url = f"/subscriptions/{self._config.subscription_id}/resourceGroups/{resource_group}/providers/Microsoft.Edge/solutionBindings"
+        req = self._construct_http_get_request(_url)
+        resp = self._client.send_request(req)
+        resp_dict = json.loads(resp.text())
+        try:
+            #extract solution binding ids with matching DT
+            matching_binding_ids = []
+            for sb in resp_dict["value"]:
+                dt_id = sb["properties"]["deploymentTarget"]
+                dt_name = dt_id.split('/')[-1]
+                if dt_name == deployment_target:
+                    matching_binding_ids.append(sb["id"])
+        except Exception as e:
+            print(f"Error in processing solution bindings:\n")
+            raise e
+        
+        # Assign role with scope of the bindings
 
+
+    def _construct_http_get_request(self, url):
         _headers = case_insensitive_dict({})
         _params = case_insensitive_dict({})
 
@@ -56,8 +76,6 @@ class ConfigManagerClient:
         # Construct headers
         _headers["Accept"] = accept
 
-        req = HttpRequest(method="GET", url=_url, params=_params, headers=_headers)
+        req = HttpRequest(method="GET", url=url, params=_params, headers=_headers)
         req.url = self._client.format_url(req.url)
-        resp = self._client.send_request(req)
-        print(resp)
-        print(resp.text())
+        return req

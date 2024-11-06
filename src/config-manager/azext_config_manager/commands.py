@@ -8,7 +8,6 @@
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-statements
 
-# from azure.cli.core.commands import CliCommandType
 from azure.cli.core.commands import CliCommandType
 from azext_config_manager._client_factory import cf_configmgr_preview
 
@@ -17,6 +16,7 @@ def load_command_table(self, _):
         operations_tmpl='azext_config_manager.sdk#ConfigManagerClient.{}',
         client_factory=cf_configmgr_preview)
 
-    with self.command_group('config-manager rbak', configmanager_service_sdk, client_factory=cf_configmgr_preview) as g:
-        g.custom_command('create', 'cli_cm_rbac_create')
+    with self.command_group('config-manager rbac', configmanager_service_sdk, is_preview=True, client_factory=cf_configmgr_preview) as g:
+        g.custom_command('assign-for-deployment', 'cli_cm_deployment_rbac_create')
+        g.custom_command('remove-for-deployment', 'cli_cm_deployment_rbac_remove')
    

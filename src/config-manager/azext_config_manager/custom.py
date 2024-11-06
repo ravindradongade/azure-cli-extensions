@@ -13,8 +13,14 @@ from knack.log import get_logger
 
 logger = get_logger(__name__)
 
-def cli_cm_rbac_create(client, resource_group_name, deployment_target):
+def cli_cm_deployment_rbac_create(client, resource_group_name, deployment_target, role_id, principal_id):
 
     '''Creates RBAC for Deployment'''
 
-    client.assign_role_to_solution_bindings(resource_group_name, deployment_target)
+    client.assign_role_to_solution_bindings(resource_group_name, deployment_target, role_id, principal_id)
+
+def cli_cm_deployment_rbac_remove(client, resource_group_name, deployment_target, role_id, principal_id):
+
+    '''Removes RBAC for Deployment'''
+
+    client.remove_role_from_solution_bindings(resource_group_name, deployment_target, role_id, principal_id)

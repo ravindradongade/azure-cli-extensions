@@ -18,4 +18,4 @@ from ._list import *
 from ._show import *
 from ._config_set import *
 from ._config_show import *
-
+from ._delete import *

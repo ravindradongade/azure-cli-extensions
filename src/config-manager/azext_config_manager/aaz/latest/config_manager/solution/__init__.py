@@ -9,7 +9,7 @@
 # flake8: noqa
 from ._resolve_configuration import *
 from ._publish import *
-from ._deployment_status_show import *
+# from ._deployment_status_show import *
 from ._deploy import *
 from .__cmd_group import *
 from ._create import *

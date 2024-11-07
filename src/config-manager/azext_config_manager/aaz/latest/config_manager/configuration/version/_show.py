@@ -54,7 +54,7 @@ class Show(AAZCommand):
 
         _args_schema.dynamic_configuration_version_name = AAZStrArg(
             options=[ "--version-name"],
-            help="The name of the DynamicConfigurationVersion",
+            help="The version of the Configuration",
             required=True,
             id_part="child_name_2",
             fmt=AAZStrArgFormat(

@@ -13,5 +13,3 @@ from ._create import *
 
 from ._list import *
 from ._show import *
-from ._update import *
-from ._wait import *

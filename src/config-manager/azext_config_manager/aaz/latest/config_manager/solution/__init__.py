@@ -16,6 +16,6 @@ from ._create import *
 from ._update import *
 from ._list import *
 from ._show import *
-from ._config_update import *
+from ._config_set import *
 from ._config_show import *
-from ._wait import *
+

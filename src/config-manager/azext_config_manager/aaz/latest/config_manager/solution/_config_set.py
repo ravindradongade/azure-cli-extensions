@@ -7,18 +7,25 @@
 
 # pylint: skip-file
 # flake8: noqa
-
+import os
+import platform
+import subprocess
+import tempfile
+import sys
+import json
 from azure.cli.core.aaz import *
 
 
 @register_command(
-    "config-manager solution wait",
+    "config-manager solution config set",
+    is_preview=True,
 )
-class Wait(AAZWaitCommand):
-    """Place the CLI in a waiting state until a condition is met.
+class ShowConfig2(AAZCommand):
+    """Set the values for hierarchical configs
     """
 
     _aaz_info = {
+        "version": "2024-08-01-preview",
         "resources": [
             ["mgmt-plane", "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Edge/solutions/{}", "2024-08-01-preview"],
         ]
@@ -44,18 +51,53 @@ class Wait(AAZWaitCommand):
             required=True,
         )
         _args_schema.solution_name = AAZStrArg(
-            options=["-n", "--name", "--solution-name"],
+            options=["--solution-name"],
             help="The name of the Solution",
-            required=True,
+            # required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
         )
+
+        _args_schema = cls._args_schema
+        _args_schema.level_name = AAZStrArg(
+            options=["--name"],
+            help="The name of level at which value needs to be set.",
+
+            id_part="name",
+            fmt=AAZStrArgFormat(
+                pattern="^[a-zA-Z0-9-]{3,24}$",
+            ),
+        )
+
+        # define Arg Group "Resource"
+
+        _args_schema = cls._args_schema
+        _args_schema.tags = AAZDictArg(
+            options=["--tags"],
+            arg_group="Resource",
+            help="Resource tags.",
+            nullable=True,
+        )
+
+        #
+        # _args_schema.properties = AAZFreeFormDictArg(
+        #     options=["--properties"],
+        #     arg_group="Resource",
+        #     help="The resource-specific properties for this resource.",
+        #     nullable=True,
+        # )
         return cls._args_schema
 
     def _execute_operations(self):
         self.pre_operations()
+        config_name = str(self.ctx.args.level_name)
+        if len(config_name) > 18:
+            config_name = config_name[:18] + "Config"
+        else:
+            config_name = config_name + "Config"
+        self.ctx.args.level_name = config_name
         self.SolutionsGet(ctx=self.ctx)()
         self.post_operations()
 
@@ -68,8 +110,9 @@ class Wait(AAZWaitCommand):
         pass
 
     def _output(self, *args, **kwargs):
-        result = self.deserialize_output(self.ctx.vars.instance, client_flatten=False)
-        return result
+        result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
+        print(result["properties"]["values"])
+        pass
 
     class SolutionsGet(AAZHttpOperation):
         CLIENT_TYPE = "MgmtClient"
@@ -78,14 +121,54 @@ class Wait(AAZWaitCommand):
             request = self.make_request()
             session = self.client.send_request(request=request, stream=False, **kwargs)
             if session.http_response.status_code in [200]:
-                return self.on_200(session)
+                response = self.get_config_to_update(session)
+                config_to_set = response["properties"]["values"]
+                editor= "vi"
+                if platform.system() == "Windows":
+                    editor = "notepad"
+                temp_file = tempfile.NamedTemporaryFile(delete=False)
+                temp_file.write(bytes(config_to_set, "utf-8"))
+                temp_file.close()
+                editor_output = subprocess.run([editor, temp_file.name], stdout=sys.stdout, stdin=sys.stdin,
+                                               stderr=sys.stdout, check=False)
+                if editor_output.returncode != 0:
+                    os.unlink(temp_file.name)
+                    raise CLIInternalError("Failed to update instance")
+                with open(temp_file.name, "rb") as f:
+                    config_to_set = f.read().decode("utf-8")
+                os.unlink(temp_file.name)
+                # print(config_to_set)
+                new_content = dict()
+                new_content["properties"] = response["properties"]
+                new_content["properties"]["values"] = config_to_set
 
-            return self.on_error(session.http_response)
+                request = self.client._request(
+                    "PUT", self.url, self.query_parameters, self.header_parameters2,
+                    new_content, self.form_content, self.stream_content)
+                session = self.client.send_request(request=request, stream=False, **kwargs)
+                if session.http_response.status_code in [200]:
+                    return self.on_200(session)
+                # return self.on_error(session.http_response)
+            config = dict()
+            config["properties"] = dict()
+            config["properties"]["values"] = "No config found."
+            # # config.config = AAZStrType()
+            # # config.config = "[]"
+            if session.http_response.status_code in [404]:
+                self.ctx.set_var(
+                    "instance",
+                    config,
+                    schema_builder=self._build_schema_on_404
+                )
+            #     return
+            else:
+                return self.on_error(session.http_response)
+
 
         @property
         def url(self):
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/solutions/{solutionName}",
+                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/configurations/{configName}/DynamicConfigurations/{solutionName}/versions/version1",
                 **self.url_parameters
             )
 
@@ -99,13 +182,21 @@ class Wait(AAZWaitCommand):
 
         @property
         def url_parameters(self):
+            sol_name = "common"
+            if has_value(self.ctx.args.solution_name):
+                sol_name = self.ctx.args.solution_name
+
             parameters = {
                 **self.serialize_url_param(
                     "resourceGroupName", self.ctx.args.resource_group,
                     required=True,
                 ),
                 **self.serialize_url_param(
-                    "solutionName", self.ctx.args.solution_name,
+                    "solutionName", sol_name,
+                    required=True,
+                ),
+                **self.serialize_url_param(
+                    "configName", self.ctx.args.level_name,
                     required=True,
                 ),
                 **self.serialize_url_param(
@@ -119,7 +210,7 @@ class Wait(AAZWaitCommand):
         def query_parameters(self):
             parameters = {
                 **self.serialize_query_param(
-                    "api-version", "2024-08-01-preview",
+                    "api-version", "2024-06-01-preview",
                     required=True,
                 ),
             }
@@ -134,6 +225,20 @@ class Wait(AAZWaitCommand):
             }
             return parameters
 
+        @property
+        def header_parameters2(self):
+            parameters = {
+                **self.serialize_header_param(
+                    "Content-Type", "application/json",
+                ),
+                **self.serialize_header_param(
+                    "Accept", "application/json",
+                ),
+            }
+            return parameters
+        def get_config_to_update(self,session):
+            data = self.deserialize_http_content(session)
+            return data
         def on_200(self, session):
             data = self.deserialize_http_content(session)
             self.ctx.set_var(
@@ -143,6 +248,14 @@ class Wait(AAZWaitCommand):
             )
 
         _schema_on_200 = None
+
+        @classmethod
+        def _build_schema_on_404(cls):
+            cls._schema_on_200 = AAZObjectType()
+            _schema_on_200 = cls._schema_on_200
+            _schema_on_200.properties = AAZFreeFormDictType()
+            return cls._schema_on_200
+
 
         @classmethod
         def _build_schema_on_200(cls):
@@ -161,7 +274,7 @@ class Wait(AAZWaitCommand):
             _schema_on_200.name = AAZStrType(
                 flags={"read_only": True},
             )
-            _schema_on_200.properties = AAZObjectType()
+            _schema_on_200.properties = AAZFreeFormDictType()
             _schema_on_200.system_data = AAZObjectType(
                 serialized_name="systemData",
                 flags={"read_only": True},
@@ -171,49 +284,8 @@ class Wait(AAZWaitCommand):
                 flags={"read_only": True},
             )
 
-            properties = cls._schema_on_200.properties
-            properties.capabilities = AAZListType(
-                flags={"required": True},
-            )
-            properties.configuration_links = AAZListType(
-                serialized_name="configurationLinks",
-                flags={"read_only": True},
-            )
-            properties.current_version = AAZStrType(
-                serialized_name="currentVersion",
-                flags={"read_only": True},
-            )
-            properties.description = AAZStrType(
-                flags={"required": True},
-            )
-            properties.provisioning_state = AAZStrType(
-                serialized_name="provisioningState",
-                flags={"read_only": True},
-            )
 
-            capabilities = cls._schema_on_200.properties.capabilities
-            capabilities.Element = AAZObjectType()
 
-            _element = cls._schema_on_200.properties.capabilities.Element
-            _element.description = AAZStrType(
-                flags={"required": True},
-            )
-            _element.name = AAZStrType(
-                flags={"required": True},
-            )
-
-            configuration_links = cls._schema_on_200.properties.configuration_links
-            configuration_links.Element = AAZObjectType()
-
-            _element = cls._schema_on_200.properties.configuration_links.Element
-            _element.configuration_id = AAZStrType(
-                serialized_name="configurationId",
-                flags={"required": True},
-            )
-            _element.hierarchy_type = AAZStrType(
-                serialized_name="hierarchyType",
-                flags={"required": True},
-            )
 
             system_data = cls._schema_on_200.system_data
             system_data.created_at = AAZStrType(
@@ -241,8 +313,8 @@ class Wait(AAZWaitCommand):
             return cls._schema_on_200
 
 
-class _WaitHelper:
-    """Helper class for Wait"""
+class _ShowHelper:
+    """Helper class for Show"""
 
 
-__all__ = ["Wait"]
+__all__ = ["ShowConfig2"]

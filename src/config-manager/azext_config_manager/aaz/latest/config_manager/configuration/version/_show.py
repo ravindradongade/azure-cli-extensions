@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Dynamic Configuration Version Resource
+    """To get a configuration version
     """
 
     _aaz_info = {
@@ -53,7 +53,7 @@ class Show(AAZCommand):
         )
 
         _args_schema.dynamic_configuration_version_name = AAZStrArg(
-            options=[ "--version-name"],
+            options=["--version-name"],
             help="The version of the Configuration",
             required=True,
             id_part="child_name_2",

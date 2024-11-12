@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class ShowConfig(AAZCommand):
-    """Get a Solution resource
+    """To get a configurations available at specified hierarchical entity
     """
 
     _aaz_info = {
@@ -47,7 +47,7 @@ class ShowConfig(AAZCommand):
         )
         _args_schema.solution_name = AAZStrArg(
             options=["--solution-name"],
-            help="The name of the Solution",
+            help="The name of the Solution, This is required only to get solution configurations",
             # required=True,
             id_part="name",
             fmt=AAZStrArgFormat(
@@ -58,9 +58,9 @@ class ShowConfig(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.level_name = AAZStrArg(
             options=["--name"],
-            help="The name of level at which value needs to be set.",
+            help="The Deployment Target or Site name at which values needs to be set",
 
-            id_part="name",
+            required = True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),

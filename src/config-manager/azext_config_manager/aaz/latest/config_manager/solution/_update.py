@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Update(AAZCommand):
-    """Update a Solution resource
+    """To update solution
     """
 
     _aaz_info = {
@@ -69,7 +69,7 @@ class Update(AAZCommand):
         _args_schema.description = AAZStrArg(
             options=["--description"],
             arg_group="Properties",
-            required=True,
+            # required=True,
             help="Description of solution",
         )
 

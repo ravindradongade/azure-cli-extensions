@@ -21,7 +21,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class ShowConfig2(AAZCommand):
-    """Set the values for hierarchical configs
+    """To set the values to configurations available at specified hierarchical entity
     """
 
     _aaz_info = {
@@ -52,9 +52,9 @@ class ShowConfig2(AAZCommand):
         )
         _args_schema.solution_name = AAZStrArg(
             options=["--solution-name"],
-            help="The name of the Solution",
+            help="The name of the Solution, This is required only to set solution configurations",
             # required=True,
-            id_part="name",
+
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -63,9 +63,8 @@ class ShowConfig2(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.level_name = AAZStrArg(
             options=["--name"],
-            help="The name of level at which value needs to be set.",
-
-            id_part="name",
+            help="The Deployment Target or Site name at which values needs to be set",
+            required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -73,13 +72,13 @@ class ShowConfig2(AAZCommand):
 
         # define Arg Group "Resource"
 
-        _args_schema = cls._args_schema
-        _args_schema.tags = AAZDictArg(
-            options=["--tags"],
-            arg_group="Resource",
-            help="Resource tags.",
-            nullable=True,
-        )
+        # _args_schema = cls._args_schema
+        # _args_schema.tags = AAZDictArg(
+        #     options=["--tags"],
+        #     arg_group="Resource",
+        #     help="Resource tags.",
+        #     nullable=True,
+        # )
 
         #
         # _args_schema.properties = AAZFreeFormDictArg(

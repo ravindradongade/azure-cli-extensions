@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List Dynamic Configuration Version Resource
+    """To list configuration versions for specified configuration name.
     """
 
     _aaz_info = {

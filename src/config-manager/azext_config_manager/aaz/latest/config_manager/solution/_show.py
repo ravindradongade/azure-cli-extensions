@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Solution resource
+    """Get a Solution
     """
 
     _aaz_info = {

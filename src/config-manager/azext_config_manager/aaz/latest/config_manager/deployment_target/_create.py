@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Create(AAZCommand):
-    """Create a Deployment Target Resource
+    """To create a Deployment Target
     """
 
     _aaz_info = {
@@ -73,7 +73,7 @@ class Create(AAZCommand):
         _args_schema.custom_location = AAZStrArg(
             options=["--custom-location"],
             arg_group="Properties",
-            help="Custom location of deployment target",
+            help="ARM Id of Custom location of ARC enabled K8 cluster",
             required=True,
         )
         _args_schema.display_name = AAZStrArg(

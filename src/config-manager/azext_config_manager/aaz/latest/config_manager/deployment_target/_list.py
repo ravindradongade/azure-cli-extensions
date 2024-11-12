@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List by specified resource group
+    """to list deployment targets by specified resource group or subscription
     """
 
     _aaz_info = {
@@ -44,7 +44,6 @@ class List(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.resource_group = AAZResourceGroupNameArg(
-            required=True,
         )
         return cls._args_schema
 
@@ -79,8 +78,13 @@ class List(AAZCommand):
 
         @property
         def url(self):
+            if has_value(self.ctx.args.resource_group) and has_value(self.ctx.subscription_id):
+                return self.client.format_url(
+                    "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/deploymentTargets",
+                    **self.url_parameters
+                )
             return self.client.format_url(
-                "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Edge/deploymentTargets",
+                "/subscriptions/{subscriptionId}/providers/Microsoft.Edge/deploymentTargets",
                 **self.url_parameters
             )
 
@@ -94,11 +98,23 @@ class List(AAZCommand):
 
         @property
         def url_parameters(self):
+            if has_value(self.ctx.args.resource_group) and has_value(self.ctx.subscription_id):
+                parameters = {
+                    **self.serialize_url_param(
+                        "resourceGroupName", self.ctx.args.resource_group,
+                        required=True,
+                    ),
+                    **self.serialize_url_param(
+                        "subscriptionId", self.ctx.subscription_id,
+                        required=True,
+                    ),
+                }
+                return parameters
             parameters = {
-                **self.serialize_url_param(
-                    "resourceGroupName", self.ctx.args.resource_group,
-                    required=True,
-                ),
+                # **self.serialize_url_param(
+                #     "resourceGroupName", self.ctx.args.resource_group,
+                #     required=True,
+                # ),
                 **self.serialize_url_param(
                     "subscriptionId", self.ctx.subscription_id,
                     required=True,

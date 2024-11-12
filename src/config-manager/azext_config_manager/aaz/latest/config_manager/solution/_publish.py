@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Publish(AAZCommand):
-    """Post request to publish
+    """To publish solution
     """
 
     _aaz_info = {
@@ -50,7 +50,7 @@ class Publish(AAZCommand):
             options=["-n","--name","--solution-name"],
             help="The name of the Solution",
             required=True,
-            id_part="name",
+            # id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -60,7 +60,7 @@ class Publish(AAZCommand):
             options=["--deployment-target-name"],
             help="The name of the Deployment Target",
             required=True,
-            id_part="name",
+            # id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -71,7 +71,7 @@ class Publish(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.solution_version = AAZStrArg(
             options=["-v","--version","--solution-version"],
-            arg_group="Body",
+            # arg_group="Body",
             help="Solution Version",
             required=True,
         )

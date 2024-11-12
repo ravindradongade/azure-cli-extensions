@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Deployment Target Resource
+    """To get a Deployment Target
     """
 
     _aaz_info = {

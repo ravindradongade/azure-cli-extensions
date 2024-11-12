@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Schema  Resource
+    """To get a schema version
     """
 
     _aaz_info = {

@@ -70,6 +70,7 @@ class Create(AAZCommand):
             options=["--version-name"],
             arg_group="Properties",
             help="Version of configuration",
+            required=True
             # fmt=AAZStrArgFormat(
             #     pattern="^[a-zA-Z0-9-]{3,24}$",
             # ),
@@ -77,8 +78,9 @@ class Create(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.config_template = AAZStrArg(
             options=["--config-file"],
+            required=True,
             arg_group="Properties",
-            help="Full path of config file",
+            help="Absolute path of config file prefixed with @",
         )
 
         _args_schema = cls._args_schema

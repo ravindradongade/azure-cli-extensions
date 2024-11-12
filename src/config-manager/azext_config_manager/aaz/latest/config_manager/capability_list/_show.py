@@ -15,7 +15,7 @@ from azure.cli.core.aaz import *
     "config-manager capabilities show",
 )
 class Show(AAZCommand):
-    """Get a Capability List Resource
+    """Get a Capabilities
     """
 
     _aaz_info = {

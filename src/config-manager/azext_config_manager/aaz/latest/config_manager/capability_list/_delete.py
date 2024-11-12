@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Delete(AAZCommand):
-    """Delete a Capability List Resource
+    """To delete capabilities
     """
 
     _aaz_info = {
@@ -45,7 +45,7 @@ class Delete(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.capability_list_name = AAZStrArg(
             options=["-n", "--name", "--capability-list-name"],
-            help="The name of the CapabilityList",
+            help="The name of the capability list",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(

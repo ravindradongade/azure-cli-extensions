@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     confirmation="Are you sure you want to perform this operation?",
 )
 class Delete(AAZCommand):
-    """Delete a Dynamic Configuration Version Resource
+    """To delete configuration version.
     """
 
     _aaz_info = {
@@ -55,7 +55,7 @@ class Delete(AAZCommand):
 
         _args_schema.dynamic_configuration_version_name = AAZStrArg(
             options=["--version-name"],
-            help="The name of the DynamicConfigurationVersion",
+            help="Version of the configuration",
             required=True,
             id_part="child_name_2",
             fmt=AAZStrArgFormat(

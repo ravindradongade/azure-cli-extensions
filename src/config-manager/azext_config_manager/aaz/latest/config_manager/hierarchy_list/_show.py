@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Show(AAZCommand):
-    """Get a Hierarchy List Resource
+    """Get a Hierarchy List
     """
 
     _aaz_info = {
@@ -43,7 +43,7 @@ class Show(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.hierarchy_list_name = AAZStrArg(
-            options=["-n", "--name", "--hierarchy-list-name"],
+            options=["-n", "--name"],
             help="The name of the HierarchyList",
             required=True,
             id_part="name",

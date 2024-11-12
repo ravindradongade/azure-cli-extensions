@@ -15,7 +15,7 @@ from azure.cli.core.aaz import *
     "config-manager capabilities create",
 )
 class Create(AAZCommand):
-    """Create a Capability List Resource
+    """To create capabilities
     """
 
     _aaz_info = {
@@ -43,7 +43,7 @@ class Create(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.capability_list_name = AAZStrArg(
             options=["-n", "--name"],
-            help="The name of the CapabilityList",
+            help="The name of the capability list",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
@@ -58,7 +58,7 @@ class Create(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.capabilities = AAZStrArg(
             options=["--capabilities"],
-            arg_group="Properties",
+             arg_group="Properties",
             help="List of capabilities in comma separated format",
             required=True,
         )

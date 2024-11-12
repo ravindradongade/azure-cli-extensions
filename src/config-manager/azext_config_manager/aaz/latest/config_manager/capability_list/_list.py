@@ -15,7 +15,7 @@ from azure.cli.core.aaz import *
     "config-manager capabilities list",
 )
 class List(AAZCommand):
-    """List by subscription
+    """List capabilities by specified resource group or subscription.
     """
 
     _aaz_info = {

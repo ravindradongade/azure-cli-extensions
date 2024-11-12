@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List by specified resource group
+    """List Hiearchies by specified resource group or subscription
     """
 
     _aaz_info = {

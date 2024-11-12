@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Deploy(AAZCommand):
-    """Post request to deploy
+    """To deploy Solution.
     """
 
     _aaz_info = {
@@ -47,10 +47,10 @@ class Deploy(AAZCommand):
             required=True,
         )
         _args_schema.solution_name = AAZStrArg(
-            options=["--solution-name"],
+            options=["-n","--name","--solution-name"],
             help="The name of the Solution",
             required=True,
-            id_part="name",
+            # id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -60,7 +60,7 @@ class Deploy(AAZCommand):
             options=["--deployment-target-name"],
             help="The name of the Deployment Target",
             required=True,
-            id_part="name",
+            # id_part="name",
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
             ),
@@ -70,8 +70,8 @@ class Deploy(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.solution_version = AAZStrArg(
-            options=["--solution-version"],
-            arg_group="Body",
+            options=["-v","--version","--solution-version"],
+            # arg_group="Body",
             help="Solution Version",
             required=True,
         )
@@ -97,7 +97,6 @@ class Deploy(AAZCommand):
             request = self.make_request()
             session = self.client.send_request(request=request, stream=False, **kwargs)
             if session.http_response.status_code in [200,202]:
-                print("******************************************************************* 202*************************************")
                 return self.client.build_lro_polling(
                     self.ctx.args.no_wait,
                     session,

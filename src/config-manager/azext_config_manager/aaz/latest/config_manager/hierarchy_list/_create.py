@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Create(AAZCommand):
-    """Create a Hierarchy List Resource
+    """To create a Hierarchy List
     """
 
     _aaz_info = {
@@ -44,7 +44,7 @@ class Create(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.hierarchy_list_name = AAZStrArg(
             options=["-n", "--name"],
-            help="The name of the Hierarchy Levels",
+            help="The name of the Hierarchy List",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
@@ -219,7 +219,8 @@ class Create(AAZCommand):
 
             payload = self.serialize_content(_content_value)
             payload["properties"]["hierarchyLevels"] = hierarchies
-            return self.serialize_content(_content_value)
+            return payload
+
 
         def on_200_201(self, session):
             data = self.deserialize_http_content(session)

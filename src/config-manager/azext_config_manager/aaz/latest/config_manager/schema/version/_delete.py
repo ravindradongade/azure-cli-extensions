@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     confirmation="Are you sure you want to perform this operation?",
 )
 class Delete(AAZCommand):
-    """Delete a Schema Version Resource
+    """To delete a schema version
     """
 
     _aaz_info = {

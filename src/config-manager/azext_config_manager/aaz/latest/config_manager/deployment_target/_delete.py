@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     confirmation="Are you sure you want to perform this operation?",
 )
 class Delete(AAZCommand):
-    """Delete a Deployment Target Resource
+    """To delete a Deployment Target
     """
 
     _aaz_info = {
@@ -45,7 +45,7 @@ class Delete(AAZCommand):
         _args_schema = cls._args_schema
         _args_schema.deployment_target_name = AAZStrArg(
             options=["-n", "--name", "--deployment-target-name"],
-            help="The name of the DeploymentTarget",
+            help="The name of the Deployment Target",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(

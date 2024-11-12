@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List by specified resource group
+    """To list schema versions by specified schema name
     """
 
     _aaz_info = {

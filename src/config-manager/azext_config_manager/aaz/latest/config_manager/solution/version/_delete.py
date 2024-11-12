@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     confirmation="Are you sure you want to perform this operation?",
 )
 class Delete(AAZCommand):
-    """Delete a Solution Version Resource
+    """To delete a solution version
     """
 
     _aaz_info = {

@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Create(AAZCommand):
-    """Create a Schema Resource
+    """To create a schema
     """
 
     _aaz_info = {
@@ -51,6 +51,7 @@ class Create(AAZCommand):
         _args_schema.schema_name = AAZStrArg(
             options=["-n", "--name", "--schema-name"],
             help="The name of the Schema",
+            id_part="name",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
@@ -63,6 +64,7 @@ class Create(AAZCommand):
         _args_schema.version = AAZStrArg(
             options=["-v", "--version","--schema-version"],
             arg_group="Properties",
+            required=True,
             help="Version of schema",
         )
 
@@ -70,7 +72,8 @@ class Create(AAZCommand):
         _args_schema.schema_file = AAZStrArg(
             options=["--schema-file"],
             arg_group="Properties",
-            help="Schema file",
+            required=True,
+            help="Absolute path of schema file prefixed with @",
         )
 
         # define Arg Group "Resource"

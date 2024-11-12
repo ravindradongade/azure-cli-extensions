@@ -15,7 +15,7 @@ from azure.cli.core.aaz import *
     "config-manager",
 )
 class __CMDGroup(AAZCommandGroup):
-    """Config Manager
+    """To manage Config Manager
     """
     pass
 

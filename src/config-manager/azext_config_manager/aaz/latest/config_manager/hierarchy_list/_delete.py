@@ -17,7 +17,7 @@ from azure.cli.core.aaz import *
     confirmation="Are you sure you want to perform this operation?",
 )
 class Delete(AAZCommand):
-    """Delete a Hierarchy List Resource
+    """To delete a Hierarchy List
     """
 
     _aaz_info = {
@@ -44,8 +44,8 @@ class Delete(AAZCommand):
 
         _args_schema = cls._args_schema
         _args_schema.hierarchy_list_name = AAZStrArg(
-            options=["-n", "--name", "--hierarchy-list-name"],
-            help="The name of the HierarchyList",
+            options=["-n", "--name"],
+            help="The name of the Hierarchy List",
             required=True,
             id_part="name",
             fmt=AAZStrArgFormat(

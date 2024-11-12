@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class List(AAZCommand):
-    """List Solution Version Resources
+    """To list solution versions specified by solution name
     """
 
     _aaz_info = {

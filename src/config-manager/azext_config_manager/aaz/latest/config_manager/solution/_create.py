@@ -16,7 +16,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Create(AAZCommand):
-    """Create a Solution Resource
+    """To create a Solution
     """
 
     _aaz_info = {
@@ -49,6 +49,7 @@ class Create(AAZCommand):
         _args_schema.solution_name = AAZStrArg(
             options=["-n", "--name", "--solution-name"],
             help="The name of the Solution",
+            id_part="name",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[a-zA-Z0-9-]{3,24}$",
@@ -57,6 +58,7 @@ class Create(AAZCommand):
         _args_schema.solution_version_name = AAZStrArg(
             options=["-v", "--version", "--solution-version"],
             help="The version of the solution",
+            arg_group="Properties",
             required=True,
             fmt=AAZStrArgFormat(
                 pattern="^[0-9]+\\.[0-9]+\\.[0-9]+$",
@@ -97,7 +99,7 @@ class Create(AAZCommand):
             options=["--config-template"],
             arg_group="Properties",
             required=True,
-            help="Config Template File Path(Full path)",
+            help="Absolute path of config template file prefixed with @",
         )
 
         # capabilities = cls._args_schema.capabilities

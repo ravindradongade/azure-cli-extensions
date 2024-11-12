@@ -20,7 +20,7 @@ from azure.cli.core.aaz import *
     is_preview=True,
 )
 class Update(AAZCommand):
-    """Update a Schema Version Resource
+    """To update a Schema
     """
 
     _aaz_info = {

@@ -95,11 +95,11 @@ class Create(AAZCommand):
         )
 
         _args_schema = cls._args_schema
-        _args_schema.config_template = AAZStrArg(
+        _args_schema.config_template = AAZFileArg(
             options=["--config-template"],
             arg_group="Properties",
             required=True,
-            help="Absolute path of config template file prefixed with @",
+            help="Absolute path of config template file",
         )
 
         # capabilities = cls._args_schema.capabilities

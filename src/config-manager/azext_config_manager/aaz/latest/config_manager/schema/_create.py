@@ -69,11 +69,11 @@ class Create(AAZCommand):
         )
 
         _args_schema = cls._args_schema
-        _args_schema.schema_file = AAZStrArg(
+        _args_schema.schema_file = AAZFileArg(
             options=["--schema-file"],
             arg_group="Properties",
             required=True,
-            help="Absolute path of schema file prefixed with @",
+            help="Absolute path of schema file",
         )
 
         # define Arg Group "Resource"

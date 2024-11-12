@@ -82,6 +82,11 @@ class Create(AAZCommand):
             help="Display Name of deployment target",
             required=True,
         )
+        _args_schema.scope = AAZStrArg(
+            options=["--scope"],
+            arg_group="Properties",
+            help="Scope of the Deployment Target, in case of K8s cluster, it is the name of namespace in which Solution needs to be deployed",
+        )
 
         # capabilities = cls._args_schema.capabilities
         # capabilities.Element = AAZObjectArg()
@@ -228,6 +233,7 @@ class Create(AAZCommand):
             _builder.set_prop("location", AAZStrType, ".location", typ_kwargs={"flags": {"required": True}})
             _builder.set_prop("properties", AAZObjectType)
             _builder.set_prop("tags", AAZDictType, ".tags")
+
             caps = []
             for capability in str(self.ctx.args.capabilities).split(","):
                 caps.append({
@@ -238,6 +244,8 @@ class Create(AAZCommand):
             if properties is not None:
                 # properties.set_const("capabilities", caps, AAZListType, typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("customLocation", AAZStrType, ".custom_location",
+                                    typ_kwargs={"flags": {"required": True}})
+                properties.set_prop("scope", AAZStrType, ".scope",
                                     typ_kwargs={"flags": {"required": True}})
                 # properties.set_prop("hierarchyLevel", AAZStrType, ".hierarchy_level ", typ_kwargs={"flags": {"required": True}})
                 properties.set_prop("displayName", AAZStrType, ".display_name", typ_kwargs={"flags": {"required": True}})

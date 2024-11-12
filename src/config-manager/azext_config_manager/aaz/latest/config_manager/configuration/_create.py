@@ -76,11 +76,11 @@ class Create(AAZCommand):
             # ),
         )
         _args_schema = cls._args_schema
-        _args_schema.config_template = AAZStrArg(
+        _args_schema.config_template = AAZFileArg(
             options=["--config-file"],
             required=True,
             arg_group="Properties",
-            help="Absolute path of config file prefixed with @",
+            help="Absolute path of config file",
         )
 
         _args_schema = cls._args_schema

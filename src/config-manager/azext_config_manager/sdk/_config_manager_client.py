@@ -124,7 +124,7 @@ class ConfigManagerClient:
                         if resp.status_code != 200:
                             print(f"Response code status was {resp.status_code} when removing role for {arm_id}: {resp.text()}")
                         else:
-                            print(f"Successfully removed role {role_ass["id"]}") 
+                            print(f"Successfully removed role {role_ass['id']}") 
         except Exception as e:
             print(f"Error in removing role on scope {scope}\nException: {e}")
             raise e

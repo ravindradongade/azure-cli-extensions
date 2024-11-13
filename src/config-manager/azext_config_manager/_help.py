@@ -13,7 +13,7 @@ from knack.help_files import helps  # pylint: disable=unused-import
 helps['config-manager rbac'] = """
 type: group
 short-summary: Used for assigning roles to principals
-long-summary: Can be used for assigning a role to a principal on scopes related to deployment, config authoring, etc.            
+long-summary: Can be used for assigning a role to a principal on scopes related to deployment.          
 examples:
     - name: Assign custom role b24988ac-6180-42a0-ab88-20f7382dd24c to principal 7f88d3e4-6a65-4abd-835f-548760f8b182 for deployment scope
       text: az config-manager rbac assign-for-deployment -g resource_group --deployment-target dt_id --role-id b24988ac-6180-42a0-ab88-20f7382dd24c --principal-id 7f88d3e4-6a65-4abd-835f-548760f8b182

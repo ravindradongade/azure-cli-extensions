@@ -74,6 +74,20 @@ class Delete(AAZCommand):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
+            schema_version_url = "/subscriptions/"+str(self.ctx.subscription_id)+"/resourceGroups/"+str(self.ctx.args.resource_group)+"/providers/Microsoft.Edge/schemas/"+str(self.ctx.args.schema_name)+"/versions/"
+            request = self.client._request(
+                "GET", schema_version_url, self.query_parameters, self.header_parameters_list,
+                None, self.form_content, None)
+            list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(list_session)
+                versions = data["value"]
+                for version in versions:
+                    version_id = version["id"]
+                    request = self.client._request(
+                        "DELETE", version_id, self.query_parameters, self.header_parameters,
+                        None, self.form_content, None)
+                    delete_session = self.client.send_request(request=request, stream=False, **kwargs)
             request = self.make_request()
             session = self.client.send_request(request=request, stream=False, **kwargs)
             if session.http_response.status_code in [200]:
@@ -82,6 +96,15 @@ class Delete(AAZCommand):
                 return self.on_204(session)
 
             return self.on_error(session.http_response)
+
+        @property
+        def header_parameters_list(self):
+            parameters = {
+                **self.serialize_header_param(
+                    "Accept", "application/json",
+                ),
+            }
+            return parameters
 
         @property
         def url(self):

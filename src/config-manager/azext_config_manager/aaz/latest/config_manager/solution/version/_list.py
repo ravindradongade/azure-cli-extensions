@@ -139,7 +139,6 @@ class List(AAZCommand):
 
         def on_200(self, session):
             data = self.deserialize_http_content(session)
-            print(data)
             self.ctx.set_var(
                 "instance",
                 data,

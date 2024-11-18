@@ -74,14 +74,23 @@ class Delete(AAZCommand):
         CLIENT_TYPE = "MgmtClient"
 
         def __call__(self, *args, **kwargs):
-            request = self.make_request()
-            session = self.client.send_request(request=request, stream=False, **kwargs)
-            if session.http_response.status_code in [200]:
-                return self.on_200(session)
-            if session.http_response.status_code in [204]:
-                return self.on_204(session)
+            request = self.client._request(
+                "GET", self.url, self.query_parameters, self.header_parameters_list,
+                None, self.form_content, None)
+            dt_list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if dt_list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(dt_list_session)
+                dt_id = data["id"]
+                self.delete_solution_bindings(dt_id, **kwargs)
+                print("deleting dt "+str(self.ctx.args.deployment_target_name))
+                request = self.make_request()
+                session = self.client.send_request(request=request, stream=False, **kwargs)
+                if session.http_response.status_code in [200]:
+                    return self.on_200(session)
+                if session.http_response.status_code in [204]:
+                    return self.on_204(session)
 
-            return self.on_error(session.http_response)
+                return self.on_error(session.http_response)
 
         @property
         def url(self):
@@ -126,13 +135,106 @@ class Delete(AAZCommand):
             }
             return parameters
 
+        @property
+        def header_parameters_list(self):
+            parameters = {
+                **self.serialize_header_param(
+                    "Accept", "application/json",
+                ),
+            }
+            return parameters
         def on_200(self, session):
             pass
 
         def on_204(self, session):
             pass
 
+        def get_matched_sbs(self, dt_id, **kwargs):
+            result = []
+            dt_list_url = "/subscriptions/" + str(self.ctx.subscription_id) + "/resourceGroups/" + str(
+                self.ctx.args.resource_group) + "/providers/Microsoft.Edge/solutionBindings"
+            request = self.client._request(
+                "GET", dt_list_url, self.query_parameters, self.header_parameters_list,
+                None, self.form_content, None)
+            dt_list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if dt_list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(dt_list_session)
+                sbs = data["value"]
 
+                for sb in sbs:
+                    dt = sb["properties"]["deploymentTarget"]
+
+                    if dt == dt_id:
+                        result.append((sb["id"], sb["properties"]["solution"]))
+            return result
+        def delete_solution_bindings(self,dt_id, **kwargs):
+            sbs = self.get_matched_sbs(dt_id, **kwargs)
+            print(len(sbs))
+            for sb in sbs:
+                split = sb[1].split()
+                sol_name = split[-1]
+                sol_versions = self.get_sol_versions(sb[1], **kwargs)
+                self.delete_solution_instance(sol_versions,sb[0],**kwargs)
+                self.delete_sb_config(sb[0],sol_versions, **kwargs)
+                self.delete_dt_backfilled_config(str(self.ctx.args.deployment_target_name), sol_name, **kwargs)
+                print("deleting sb "+sb[0])
+                request = self.client._request(
+                    "DELETE", sb[0], self.query_parameters, self.header_parameters,
+                    None, self.form_content, None)
+                sb_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+
+        def delete_solution_instance(self, sol_versions, sb_id, **kwargs):
+
+            for sv in sol_versions:
+                solution_instance_id = sb_id+"/solutionInstances/{}-1".format(
+                   sv.replace(".", "-"))
+                request = self.client._request(
+                    "DELETE", solution_instance_id, self.query_parameters, self.header_parameters,
+                    None, self.form_content, None)
+                si_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+
+        def delete_dt_backfilled_config(self, dt_name, sol_name, **kwargs):
+            config_name = dt_name
+            if len(config_name) > 18:
+                config_name = config_name[:18] + "Config"
+            else:
+                config_name = config_name + "Config"
+            url = "/subscriptions/" + str(self.ctx.subscription_id) + "/resourceGroups/" + str(
+                self.ctx.args.resource_group) + "/providers/Microsoft.Edge/configurations/"+config_name+"/DynamicConfigurations/common/versions/version1"
+            #print("deleting dt config "+url)
+            request = self.client._request(
+                "DELETE", url, self.query_parameters, self.header_parameters,
+                None, self.form_content, None)
+            c_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+            url = "/subscriptions/" + str(self.ctx.subscription_id) + "/resourceGroups/" + str(
+                self.ctx.args.resource_group) + "/providers/Microsoft.Edge/configurations/" + config_name + "/DynamicConfigurations/"+sol_name+"/versions/version1"
+            #print("deleting sol config ", url)
+            request = self.client._request(
+                "DELETE", url, self.query_parameters, self.header_parameters,
+                None, self.form_content, None)
+            c_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+        def delete_sb_config(self, sb_id, sol_versions, **kwargs):
+            for sol_v in sol_versions:
+                binding_config = sb_id+"solutionBindingConfigurations/{}-1".format(
+                    sol_v.replace(".", "-"))
+                #print("deleting sb config "+binding_config)
+                request = self.client._request(
+                    "DELETE", binding_config, self.query_parameters, self.header_parameters,
+                    None, self.form_content, None)
+                sbc_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+        def get_sol_versions(self, sol_id, **kwargs):
+            sol_versions = []
+            sol_v_url = sol_id + "/versions"
+            request = self.client._request(
+                "GET", sol_v_url, self.query_parameters, self.header_parameters_list,
+                None, self.form_content, None)
+            list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(list_session)
+                versions = data["value"]
+                for version in versions:
+                    sol_versions.append(version["name"])
+            return sol_versions
 class _DeleteHelper:
     """Helper class for Delete"""
 

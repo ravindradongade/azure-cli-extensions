@@ -82,7 +82,6 @@ class Delete(AAZCommand):
                 data = self.deserialize_http_content(dt_list_session)
                 dt_id = data["id"]
                 self.delete_solution_bindings(dt_id, **kwargs)
-                print("deleting dt "+str(self.ctx.args.deployment_target_name))
                 request = self.make_request()
                 session = self.client.send_request(request=request, stream=False, **kwargs)
                 if session.http_response.status_code in [200]:
@@ -169,7 +168,6 @@ class Delete(AAZCommand):
             return result
         def delete_solution_bindings(self,dt_id, **kwargs):
             sbs = self.get_matched_sbs(dt_id, **kwargs)
-            print(len(sbs))
             for sb in sbs:
                 split = sb[1].split()
                 sol_name = split[-1]
@@ -213,15 +211,22 @@ class Delete(AAZCommand):
                 "DELETE", url, self.query_parameters, self.header_parameters,
                 None, self.form_content, None)
             c_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
-        def delete_sb_config(self, sb_id, sol_versions, **kwargs):
-            for sol_v in sol_versions:
-                binding_config = sb_id+"solutionBindingConfigurations/{}-1".format(
-                    sol_v.replace(".", "-"))
-                #print("deleting sb config "+binding_config)
-                request = self.client._request(
-                    "DELETE", binding_config, self.query_parameters, self.header_parameters,
-                    None, self.form_content, None)
-                sbc_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+
+        def delete_sb_config(self, sb_id, sol_v, **kwargs):
+            sb_configs_url = sb_id + "/solutionBindingConfigurations"
+
+            request = self.client._request(
+                "GET", sb_configs_url, self.query_parameters, self.header_parameters_list,
+                None, self.form_content, None)
+            list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(list_session)
+                sb_configs = data["value"]
+                for sb_config in sb_configs:
+                    request = self.client._request(
+                        "DELETE", sb_config["id"], self.query_parameters, self.header_parameters,
+                        None, self.form_content, None)
+                    sbc_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
         def get_sol_versions(self, sol_id, **kwargs):
             sol_versions = []
             sol_v_url = sol_id + "/versions"

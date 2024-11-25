@@ -82,21 +82,9 @@ class Delete(AAZCommand):
             if sol_list_session.http_response.status_code in [200]:
 
                 data = self.deserialize_http_content(sol_list_session)
-                sbs = self.get_matched_sbs(data["id"], **kwargs)
+                sol_id = self.get_matched_sbs(data["id"], **kwargs)
                 sol_versions = self.delete_solution_versions(**kwargs)
-                for sb in sbs:
-                    for sol_v in sol_versions:
-                        self.delete_solution_instance(sb_id, sol_v, **kwargs)
-                        self.delete_sb_config(sb_id, sol_v, **kwargs)
-
-                    self.delete_solution_bindings(sb[0], **kwargs)
-                    split = sb[1].split()
-                    dt_name = split[-1]
-                    self.delete_dt_backfilled_config(dt_name,str(
-                self.ctx.args.solution_name),**kwargs)
-                self.delete_site_config(str(
-                    self.ctx.args.solution_name), **kwargs)
-                #print("deleting solution "+str(self.ctx.args.solution_name))
+                self.delete_solution_bindings(sol_id, sol_versions, **kwargs)
                 request = self.make_request()
                 session = self.client.send_request(request=request, stream=False, **kwargs)
                 if session.http_response.status_code in [200]:
@@ -105,6 +93,18 @@ class Delete(AAZCommand):
                     return self.on_204(session)
                 return self.on_error(session.http_response)
 
+        def delete_solution_bindings(self, sol_id,sol_versions, **kwargs):
+            sbs = self.get_matched_sbs(sol_id, **kwargs)
+            for sb in sbs:
+                split = sb[1].split()
+                dt_name = split[-1]
+                self.delete_solution_instance(sol_versions, sb[0], **kwargs)
+                self.delete_sb_config(sb[0], sol_versions, **kwargs)
+                self.delete_dt_backfilled_config(dt_name, str(self.ctx.args.solution_name), **kwargs)
+                request = self.client._request(
+                    "DELETE", sb[0], self.query_parameters, self.header_parameters,
+                    None, self.form_content, None)
+                sb_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
         def get_matched_sbs(self, sol_id, **kwargs):
             result = []
             list_url = "/subscriptions/" + str(self.ctx.subscription_id) + "/resourceGroups/" + str(
@@ -176,14 +176,22 @@ class Delete(AAZCommand):
                 None, self.form_content, None)
             si_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
         def delete_sb_config(self, sb_id, sol_v,**kwargs):
+            sb_configs_url = sb_id+"/solutionBindingConfigurations"
 
-            binding_config = sb_id+"/solutionBindingConfigurations/{}-1".format(
-               sol_v.replace(".", "-"))
-            #print("Deleting sb config "+binding_config)
             request = self.client._request(
-                "DELETE", binding_config, self.query_parameters, self.header_parameters,
+                "GET", sb_configs_url, self.query_parameters, self.header_parameters_list,
                 None, self.form_content, None)
-            sbc_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+            list_session = self.client.send_request(request=request, stream=False, **kwargs)
+            if list_session.http_response.status_code in [200]:
+                data = self.deserialize_http_content(list_session)
+                sb_configs = data["value"]
+                for sb_config in sb_configs:
+                    request = self.client._request(
+                        "DELETE", sb_config["id"], self.query_parameters, self.header_parameters,
+                        None, self.form_content, None)
+                    sbc_delete_session = self.client.send_request(request=request, stream=False, **kwargs)
+
+
         def delete_site_config(self, sol_name, **kwargs):
             url = "/subscriptions/" + str(self.ctx.subscription_id) + "/resourceGroups/" + str(
                 self.ctx.args.resource_group) + "/providers/Microsoft.Edge/sites"

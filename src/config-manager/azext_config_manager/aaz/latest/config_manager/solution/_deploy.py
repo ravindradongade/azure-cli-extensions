@@ -79,7 +79,7 @@ class Deploy(AAZCommand):
         _args_schema.solution_config_version = AAZStrArg(
             options=["--solution-config-version"],
             help="Solution Binding Configuration Version",
-            required=True,
+            default="1"
         )
         return cls._args_schema
 

@@ -75,6 +75,12 @@ class Deploy(AAZCommand):
             help="Solution Version",
             required=True,
         )
+
+        _args_schema.revision = AAZStrArg(
+            options=["--revision"],
+            help="Revision number obtained using resolve",
+            default="1"
+        )
         return cls._args_schema
 
     def _execute_operations(self):
@@ -166,17 +172,19 @@ class Deploy(AAZCommand):
                 typ=AAZObjectType,
                 typ_kwargs={"flags": {"required": True, "client_flatten": True}}
             )
-            solution_instance_id = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionInstances/{}-1".format(
+            solution_instance_id = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionInstances/{}-{}".format(
                 self.ctx.subscription_id,
                 self.ctx.args.resource_group,
                 str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
-                str(self.ctx.args.solution_version).replace(".", "-"))
+                str(self.ctx.args.solution_version).replace(".", "-"), 
+                str(self.ctx.args.revision))
             _builder.set_const("id", solution_instance_id, AAZStrType, typ_kwargs={"flags": {"required": True}})
-            bindiding_config = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-1".format(
+            bindiding_config = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutionBindings/{}/solutionBindingConfigurations/{}-{}".format(
                 self.ctx.subscription_id,
                 self.ctx.args.resource_group,
                 str(self.ctx.args.deployment_target) + "-" + str(self.ctx.args.solution_name),
-                str(self.ctx.args.solution_version).replace(".", "-"))
+                str(self.ctx.args.solution_version).replace(".", "-"),
+                str(self.ctx.args.revision))
             solution_version = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Edge/solutions/{}/versions/{}".format(
                 self.ctx.subscription_id, self.ctx.args.resource_group,
                 self.ctx.args.solution_name,

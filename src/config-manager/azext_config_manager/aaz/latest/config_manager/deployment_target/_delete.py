@@ -175,7 +175,7 @@ class Delete(AAZCommand):
                 self.delete_solution_instance(sol_versions,sb[0],**kwargs)
                 self.delete_sb_config(sb[0],sol_versions, **kwargs)
                 self.delete_dt_backfilled_config(str(self.ctx.args.deployment_target_name), sol_name, **kwargs)
-                print("deleting sb "+sb[0])
+                # print("deleting sb "+sb[0])
                 request = self.client._request(
                     "DELETE", sb[0], self.query_parameters, self.header_parameters,
                     None, self.form_content, None)

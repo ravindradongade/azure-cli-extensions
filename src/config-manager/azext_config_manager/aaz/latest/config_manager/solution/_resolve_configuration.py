@@ -93,8 +93,7 @@ class ResolveConfiguration(AAZCommand):
 
     def _output(self, *args, **kwargs):
         result = self.deserialize_output(self.ctx.vars.instance, client_flatten=True)
-        print()
-        print(json.dumps(result["properties"], indent=4))
+        print(result["properties"]["value"])
         pass
 
     class SolutionBindingsResolveConfiguration(AAZHttpOperation):
